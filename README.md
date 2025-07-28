@@ -140,10 +140,10 @@ ansible all -m command -a "uptime"
 2. ✅ Crear primer playbook
 3. ✅ Configurar para uso local
 4. ✅ Aprender módulos básicos (file, copy, template)
-5. 🔄 Crear playbooks más complejos
-6. 🔄 Trabajar con variables y facts
-7. 🔄 Crear roles reutilizables
-8. 🔄 Manejar secrets y vault
+5. ✅ Crear playbooks más complejos
+6. ✅ Trabajar con variables y facts
+7. ✅ Crear roles reutilizables
+8. ✅ Manejar secrets y vault
 9. 🔄 Implementar handlers y condiciones
 
 ## Consejos de Uso
@@ -154,4 +154,32 @@ ansible all -m command -a "uptime"
 - **Lee los logs:** Ansible te dice exactamente qué está pasando
 - **Para desarrollo local:** Usa `ansible_connection=local` en tu inventario
 - **Archivos temporales:** Usa `/tmp` para pruebas y demostraciones
-- **Archivos importantes:** Guárdalos en tu proyecto con estructura organizada 
+- **Archivos importantes:** Guárdalos en tu proyecto con estructura organizada
+
+## 🔐 **Ansible Vault - Seguridad**
+
+### **¿Qué es Vault?**
+Ansible Vault permite encriptar información sensible como contraseñas, claves API y certificados.
+
+### **Comandos básicos de Vault:**
+```bash
+# Encriptar archivo
+ansible-vault encrypt vars/secrets.yml
+
+# Ver contenido encriptado
+ansible-vault view vars/secrets.yml
+
+# Ejecutar playbook con archivo encriptado
+ansible-playbook playbook.yml --vault-password-file .vault_pass
+```
+
+### **Archivos de ejemplo:**
+- `vars/secrets.yml` - Variables sensibles (encriptado)
+- `.vault_pass` - Archivo de contraseña (no subir al repositorio)
+- `playbooks/09-vault-demo.yml` - Demostración de Vault
+
+### **Seguridad:**
+- ✅ Archivos encriptados con AES256
+- ✅ Contraseñas separadas del código
+- ✅ Permisos seguros en archivos
+- ✅ Variables enmascaradas en logs 

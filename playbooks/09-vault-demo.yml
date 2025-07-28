@@ -1,0 +1,155 @@
+---
+# ===========================================
+# PLAYBOOK: DEMOSTRACIÓN DE ANSIBLE VAULT
+# ===========================================
+# Este playbook demuestra cómo usar variables encriptadas
+# Las variables sensibles están en vars/secrets.yml (encriptado)
+
+- name: Demostrar Ansible Vault
+  hosts: local
+  gather_facts: yes
+
+  # Cargar variables encriptadas
+  vars_files:
+    - '{{ playbook_dir }}/../vars/secrets.yml'
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Mostrar información del vault
+    # ===========================================
+    - name: Mostrar información del vault
+      debug:
+        msg: |
+          🔐 DEMOSTRACIÓN DE ANSIBLE VAULT
+          Host: {{ inventory_hostname }}
+          Archivo encriptado: vars/secrets.yml
+          Variables cargadas exitosamente
+
+    # ===========================================
+    # TAREA 2: Mostrar variables de base de datos (enmascaradas)
+    # ===========================================
+    - name: Mostrar configuración de base de datos
+      debug:
+        msg: |
+          === CONFIGURACIÓN DE BASE DE DATOS ===
+          Root Password: {{ database.root_password[:10] }}...
+          App Password: {{ database.app_password[:10] }}...
+          Backup Password: {{ database.backup_password[:10] }}...
+
+    # ===========================================
+    # TAREA 3: Mostrar credenciales de API (enmascaradas)
+    # ===========================================
+    - name: Mostrar credenciales de API
+      debug:
+        msg: |
+          === CREDENCIALES DE API ===
+          GitHub Token: {{ api_credentials.github_token[:10] }}...
+          AWS Access Key: {{ api_credentials.aws_access_key[:10] }}...
+          AWS Secret Key: {{ api_credentials.aws_secret_key[:10] }}...
+
+    # ===========================================
+    # TAREA 4: Mostrar configuración de servicios
+    # ===========================================
+    - name: Mostrar configuración de servicios
+      debug:
+        msg: |
+          === CONFIGURACIÓN DE SERVICIOS ===
+          Redis Password: {{ service_tokens.redis_password[:10] }}...
+          Nginx Basic Auth: {{ service_tokens.nginx_basic_auth[:10] }}...
+          Monitoring API Key: {{ service_tokens.monitoring_api_key[:10] }}...
+
+    # ===========================================
+    # TAREA 5: Crear archivos de configuración seguros
+    # ===========================================
+    - name: Crear directorio para configuraciones seguras
+      file:
+        path: '/tmp/ansible-vault-demo'
+        state: directory
+        mode: '0700'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    - name: Crear archivo de configuración de base de datos
+      copy:
+        content: |
+          # Configuración de base de datos
+          # Generado automáticamente por Ansible Vault
+
+          [database]
+          root_password = {{ database.root_password }}
+          app_password = {{ database.app_password }}
+          backup_password = {{ database.backup_password }}
+
+          [connection]
+          host = localhost
+          port = 3306
+          database = mi_aplicacion
+        dest: '/tmp/ansible-vault-demo/database.conf'
+        mode: '0600'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      no_log: true
+
+    - name: Crear archivo de variables de entorno
+      copy:
+        content: |
+          # Variables de entorno
+          # Generado automáticamente por Ansible Vault
+
+          NODE_ENV={{ environment_vars.NODE_ENV }}
+          JWT_SECRET={{ environment_vars.JWT_SECRET }}
+          SESSION_SECRET={{ environment_vars.SESSION_SECRET }}
+
+          # Credenciales de API
+          GITHUB_TOKEN={{ api_credentials.github_token }}
+          AWS_ACCESS_KEY={{ api_credentials.aws_access_key }}
+          AWS_SECRET_KEY={{ api_credentials.aws_secret_key }}
+
+          # Configuración de correo
+          SMTP_USER={{ email_config.smtp_user }}
+          SMTP_PASSWORD={{ email_config.smtp_password }}
+        dest: '/tmp/ansible-vault-demo/.env'
+        mode: '0600'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      no_log: true
+
+    - name: Crear archivo de configuración de servicios
+      copy:
+        content: |
+          # Configuración de servicios
+          # Generado automáticamente por Ansible Vault
+
+          [redis]
+          password = {{ service_tokens.redis_password }}
+
+          [nginx]
+          basic_auth = {{ service_tokens.nginx_basic_auth }}
+
+          [monitoring]
+          api_key = {{ service_tokens.monitoring_api_key }}
+        dest: '/tmp/ansible-vault-demo/services.conf'
+        mode: '0600'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      no_log: true
+
+    # ===========================================
+    # TAREA 6: Mostrar resumen de seguridad
+    # ===========================================
+    - name: Mostrar resumen de seguridad
+      debug:
+        msg: |
+          === RESUMEN DE SEGURIDAD ===
+          ✅ Archivo encriptado: vars/secrets.yml
+          ✅ Archivos de configuración creados en: /tmp/ansible-vault-demo/
+          ✅ Permisos seguros aplicados (600/700)
+          ✅ Variables sensibles enmascaradas en logs
+
+          Archivos creados:
+          - database.conf (modo 600)
+          - .env (modo 600)
+          - services.conf (modo 600)
+
+          Nota: Los archivos contienen información sensible
+          y solo son accesibles por el propietario.

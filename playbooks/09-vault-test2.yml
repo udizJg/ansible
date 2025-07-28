@@ -1,0 +1,20 @@
+---
+# ===========================================
+# PLAYBOOK: PRUEBA CON INCLUDE_VARS
+# ===========================================
+
+- name: Prueba con include_vars
+  hosts: local
+  gather_facts: no
+
+  tasks:
+    - name: Cargar variables desde archivo
+      include_vars: ../vars/secrets.yml
+
+    - name: Mostrar variables cargadas
+      debug:
+        msg: |
+          === VARIABLES CARGADAS ===
+          Database root password: {{ database.root_password }}
+          GitHub token: {{ api_credentials.github_token }}
+          Redis password: {{ service_tokens.redis_password }}

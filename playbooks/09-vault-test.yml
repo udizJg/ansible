@@ -1,0 +1,21 @@
+---
+# ===========================================
+# PLAYBOOK: PRUEBA SIMPLE DE VAULT
+# ===========================================
+
+- name: Prueba simple de Ansible Vault
+  hosts: local
+  gather_facts: no
+
+  # Cargar variables encriptadas
+  vars_files:
+    - '{{ playbook_dir }}/vars/secrets.yml'
+
+  tasks:
+    - name: Mostrar variables cargadas
+      debug:
+        msg: |
+          === VARIABLES CARGADAS ===
+          Database root password: {{ database.root_password }}
+          GitHub token: {{ api_credentials.github_token }}
+          Redis password: {{ service_tokens.redis_password }}
