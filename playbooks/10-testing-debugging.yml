@@ -1,0 +1,188 @@
+---
+# ===========================================
+# PLAYBOOK: TESTING Y DEBUGGING EN ANSIBLE
+# ===========================================
+# Este playbook demuestra técnicas de testing y debugging
+# Incluye errores intencionales para mostrar cómo detectarlos
+
+- name: Demostrar Testing y Debugging
+  hosts: local
+  gather_facts: yes
+
+  vars:
+    directorio_base: '/tmp/ansible-testing-demo'
+    archivo_config: '{{ directorio_base }}/config.txt'
+    archivo_log: '{{ directorio_base }}/app.log'
+
+    # Lista de servicios para probar
+    servicios:
+      - nombre: 'nginx'
+        puerto: 80
+        estado: 'running'
+      - nombre: 'mysql'
+        puerto: 3306
+        estado: 'stopped'
+      - nombre: 'redis'
+        puerto: 6379
+        estado: 'running'
+
+    # Variables con posibles errores
+    configuracion:
+      debug: true
+      log_level: 'INFO'
+      max_connections: 1000
+      timeout: 30
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Verificar sintaxis (esta tarea está bien)
+    # ===========================================
+    - name: Crear directorio base
+      file:
+        path: '{{ directorio_base }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    # ===========================================
+    # TAREA 2: Tarea con error de sintaxis (comentada para demostrar)
+    # ===========================================
+    # - name: Tarea con error de sintaxis
+    #   file:
+    #     path: /tmp/test.txt
+    #     state: touch
+    #   # Error: falta el cierre de la tarea
+
+    # ===========================================
+    # TAREA 3: Tarea con variable indefinida (comentada para demostrar)
+    # ===========================================
+    # - name: Tarea con variable indefinida
+    #   debug:
+    #     msg: "Variable no definida: {{ variable_inexistente }}"
+
+    # ===========================================
+    # TAREA 4: Crear archivos de configuración
+    # ===========================================
+    - name: Crear archivo de configuración
+      copy:
+        content: |
+          # Configuración de la aplicación
+          DEBUG = {{ configuracion.debug }}
+          LOG_LEVEL = {{ configuracion.log_level }}
+          MAX_CONNECTIONS = {{ configuracion.max_connections }}
+          TIMEOUT = {{ configuracion.timeout }}
+
+          # Información del sistema
+          HOSTNAME = {{ ansible_hostname }}
+          OS = {{ ansible_system }}
+          ARCHITECTURE = {{ ansible_architecture }}
+        dest: '{{ archivo_config }}'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    # ===========================================
+    # TAREA 5: Crear archivo de log
+    # ===========================================
+    - name: Crear archivo de log
+      copy:
+        content: |
+          [{{ ansible_date_time.iso8601 }}] INFO: Aplicación iniciada
+          [{{ ansible_date_time.iso8601 }}] INFO: Configuración cargada
+          [{{ ansible_date_time.iso8601 }}] INFO: Servicios verificados
+        dest: '{{ archivo_log }}'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    # ===========================================
+    # TAREA 6: Verificar servicios (con posibles errores)
+    # ===========================================
+    - name: Verificar estado de servicios
+      debug:
+        msg: |
+          === VERIFICACIÓN DE SERVICIOS ===
+          Servicio: {{ item.nombre }}
+          Puerto: {{ item.puerto }}
+          Estado esperado: {{ item.estado }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+      loop: '{{ servicios }}'
+
+    # ===========================================
+    # TAREA 7: Simular verificación de conectividad
+    # ===========================================
+    - name: Verificar conectividad de puertos
+      debug:
+        msg: |
+          🔍 VERIFICANDO CONECTIVIDAD
+          Puerto: {{ item.puerto }}
+          Servicio: {{ item.nombre }}
+          Estado: {{ item.estado }}
+          {% if item.estado == 'running' %}
+          ✅ Puerto {{ item.puerto }} está activo
+          {% else %}
+          ⚠️ Puerto {{ item.puerto }} está inactivo
+          {% endif %}
+      loop: '{{ servicios }}'
+
+    # ===========================================
+    # TAREA 8: Crear reporte de testing
+    # ===========================================
+    - name: Crear reporte de testing
+      copy:
+        content: |
+          ===========================================
+          REPORTE DE TESTING - {{ ansible_date_time.iso8601 }}
+          ===========================================
+
+          HOST: {{ ansible_hostname }}
+          OS: {{ ansible_system }} {{ ansible_distribution }}
+          USER: {{ ansible_user_id }}
+
+          ARCHIVOS CREADOS:
+          - {{ archivo_config }}
+          - {{ archivo_log }}
+
+          SERVICIOS VERIFICADOS:
+          {% for servicio in servicios %}
+          - {{ servicio.nombre }}:{{ servicio.puerto }} ({{ servicio.estado }})
+          {% endfor %}
+
+          CONFIGURACIÓN:
+          - Debug: {{ configuracion.debug }}
+          - Log Level: {{ configuracion.log_level }}
+          - Max Connections: {{ configuracion.max_connections }}
+          - Timeout: {{ configuracion.timeout }}
+
+          ESTADO: ✅ TODAS LAS TAREAS COMPLETADAS
+          ===========================================
+        dest: '{{ directorio_base }}/reporte-testing.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    # ===========================================
+    # TAREA 9: Mostrar resumen final
+    # ===========================================
+    - name: Mostrar resumen de testing
+      debug:
+        msg: |
+          🎯 RESUMEN DE TESTING Y DEBUGGING
+          ===========================================
+
+          ✅ Directorio creado: {{ directorio_base }}
+          ✅ Archivo de configuración: {{ archivo_config }}
+          ✅ Archivo de log: {{ archivo_log }}
+          ✅ Reporte generado: {{ directorio_base }}/reporte-testing.txt
+
+          📊 Estadísticas:
+          - Servicios verificados: {{ servicios | length }}
+          - Variables definidas: {{ configuracion | length }}
+          - Archivos creados: 3
+
+          🔍 Próximos pasos:
+          1. Verificar sintaxis: ansible-playbook --syntax-check
+          2. Modo dry-run: ansible-playbook --check
+          3. Verbose mode: ansible-playbook -v
+          4. Debug específico: ansible-playbook -vvv

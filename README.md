@@ -144,7 +144,8 @@ ansible all -m command -a "uptime"
 6. ✅ Trabajar con variables y facts
 7. ✅ Crear roles reutilizables
 8. ✅ Manejar secrets y vault
-9. 🔄 Implementar handlers y condiciones
+9. ✅ Testing y debugging de playbooks
+10. 🔄 Implementar handlers y condiciones
 
 ## Consejos de Uso
 
@@ -155,6 +156,34 @@ ansible all -m command -a "uptime"
 - **Para desarrollo local:** Usa `ansible_connection=local` en tu inventario
 - **Archivos temporales:** Usa `/tmp` para pruebas y demostraciones
 - **Archivos importantes:** Guárdalos en tu proyecto con estructura organizada
+
+## 🧪 **Testing y Debugging**
+
+### **Comandos esenciales:**
+```bash
+# Verificar sintaxis
+ansible-playbook --syntax-check playbooks/10-testing-debugging.yml
+
+# Simular ejecución (dry-run)
+ansible-playbook --check playbooks/10-testing-debugging.yml
+
+# Ejecutar con información detallada
+ansible-playbook -v playbooks/10-testing-debugging.yml
+
+# Verificar conectividad
+ansible all -m ping
+```
+
+### **Archivos de ejemplo:**
+- `playbooks/10-testing-debugging.yml` - Demostración de testing
+- `playbooks/10-testing-errors.yml` - Ejemplos de errores (para debugging)
+- `docs/testing-debugging.md` - Guía completa de testing
+
+### **Beneficios:**
+- ✅ Detecta errores antes de ejecutar
+- ✅ Prueba cambios sin afectar sistemas
+- ✅ Obtiene información detallada para debugging
+- ✅ Valida configuración antes de producción
 
 ## 🔐 **Ansible Vault - Seguridad**
 

@@ -1,0 +1,86 @@
+---
+# ===========================================
+# PLAYBOOK: DEMOSTRACIÓN DE ERRORES
+# ===========================================
+# Este playbook contiene errores intencionales
+# Para demostrar técnicas de debugging
+
+- name: Playbook con errores para debugging
+  hosts: local
+  gather_facts: yes
+
+  vars:
+    directorio_base: '/tmp/ansible-errors-demo'
+    # Variable con error: falta el valor
+    archivo_config:
+    # Variable con error: sintaxis incorrecta
+    servicios: [nombre: 'nginx', puerto: 80]
+    # Variable correcta
+    configuracion:
+      debug: true
+      log_level: 'INFO'
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Error de sintaxis YAML
+    # ===========================================
+    - name: Tarea con error de sintaxis
+      file:
+        path: /tmp/test.txt
+        state: touch
+      # Error: falta el cierre de la tarea
+
+    # ===========================================
+    # TAREA 2: Variable indefinida
+    # ===========================================
+    - name: Usar variable indefinida
+      debug:
+        msg: 'Variable no definida: {{ variable_inexistente }}'
+
+    # ===========================================
+    # TAREA 3: Error en módulo
+    # ===========================================
+    - name: Usar módulo inexistente
+      modulo_inexistente:
+        parametro: 'valor'
+
+    # ===========================================
+    # TAREA 4: Error en parámetros
+    # ===========================================
+    - name: Usar parámetros incorrectos
+      file:
+        path: '{{ archivo_config }}'
+        state: 'estado_invalido'
+        mode: 'permisos_invalidos'
+
+    # ===========================================
+    # TAREA 5: Error en loop
+    # ===========================================
+    - name: Loop con estructura incorrecta
+      debug:
+        msg: 'Servicio: {{ item.nombre }}'
+      loop: '{{ servicios }}'
+
+    # ===========================================
+    # TAREA 6: Error en condición
+    # ===========================================
+    - name: Condición con error
+      debug:
+        msg: 'Condición evaluada'
+      when: configuracion.debug == "true" # Error: comparación incorrecta
+
+    # ===========================================
+    # TAREA 7: Error en template
+    # ===========================================
+    - name: Template con error
+      copy:
+        content: |
+          DEBUG = {{ configuracion.debug }}
+          LOG_LEVEL = {{ configuracion.log_level }}
+          {% if configuracion.debug %}
+          # Debug está habilitado
+          {% else %}
+          # Debug está deshabilitado
+          {% endif %}
+          # Error: falta el cierre del template
+        dest: '/tmp/config.txt'
