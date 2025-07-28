@@ -145,7 +145,8 @@ ansible all -m command -a "uptime"
 7. ✅ Crear roles reutilizables
 8. ✅ Manejar secrets y vault
 9. ✅ Testing y debugging de playbooks
-10. 🔄 Implementar handlers y condiciones
+10. ✅ Handlers y condiciones avanzadas
+11. 🔄 CI/CD con Ansible
 
 ## Consejos de Uso
 
@@ -184,6 +185,28 @@ ansible all -m ping
 - ✅ Prueba cambios sin afectar sistemas
 - ✅ Obtiene información detallada para debugging
 - ✅ Valida configuración antes de producción
+
+## 🔄 **Handlers y Condiciones Avanzadas**
+
+### **Comandos esenciales:**
+```bash
+# Ejecutar playbook con handlers avanzados
+ansible-playbook playbooks/11-handlers-avanzados.yml
+
+# Ejecutar playbook con condiciones avanzadas
+ansible-playbook playbooks/11-condiciones-avanzadas.yml
+```
+
+### **Archivos de ejemplo:**
+- `playbooks/11-handlers-avanzados.yml` - Handlers con múltiples notificaciones
+- `playbooks/11-condiciones-avanzadas.yml` - Condiciones complejas y bloques
+- `docs/handlers-condiciones-avanzadas.md` - Guía completa
+
+### **Características:**
+- ✅ Handlers inteligentes que se ejecutan solo cuando es necesario
+- ✅ Condiciones complejas (AND, OR, NOT) y expresiones anidadas
+- ✅ Bloques de manejo de errores (block, rescue, always)
+- ✅ Validación de variables antes de ejecutar tareas críticas
 
 ## 🔐 **Ansible Vault - Seguridad**
 

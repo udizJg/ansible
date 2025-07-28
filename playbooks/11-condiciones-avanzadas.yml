@@ -1,0 +1,405 @@
+---
+# ===========================================
+# PLAYBOOK: CONDICIONES AVANZADAS EN ANSIBLE
+# ===========================================
+# Este playbook demuestra condiciones avanzadas con:
+# - Lógica compleja (AND, OR, NOT)
+# - Múltiples condiciones anidadas
+# - Bloques de manejo de errores
+# - Condiciones basadas en facts y variables
+
+- name: Demostrar Condiciones Avanzadas
+  hosts: local
+  gather_facts: yes
+
+  vars:
+    directorio_base: '/tmp/ansible-condiciones-avanzadas'
+
+    # Configuración del entorno
+    entorno:
+      nombre: 'desarrollo'
+      debug: true
+      log_level: 'DEBUG'
+      max_connections: 100
+
+    # Configuración de servicios
+    servicios:
+      web:
+        habilitado: true
+        puerto: 8080
+        ssl: false
+        version: '1.0'
+      db:
+        habilitado: true
+        puerto: 3306
+        tipo: 'mysql'
+        version: '8.0'
+      cache:
+        habilitado: false
+        puerto: 6379
+        tipo: 'redis'
+        version: '6.0'
+
+    # Configuración de seguridad
+    seguridad:
+      firewall: true
+      ssl_cert: false
+      backup: true
+      monitoring: true
+
+    # Umbrales de sistema
+    umbrales:
+      cpu: 80
+      memoria: 85
+      disco: 90
+
+    # Lista de usuarios
+    usuarios:
+      - nombre: 'admin'
+        rol: 'administrador'
+        habilitado: true
+      - nombre: 'user1'
+        rol: 'usuario'
+        habilitado: true
+      - nombre: 'user2'
+        rol: 'usuario'
+        habilitado: false
+      - nombre: 'guest'
+        rol: 'invitado'
+        habilitado: false
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Crear directorio base
+    # ===========================================
+    - name: Crear directorio base
+      file:
+        path: '{{ directorio_base }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    # ===========================================
+    # TAREA 2: Condiciones simples
+    # ===========================================
+    - name: Crear archivo de configuración básica
+      copy:
+        content: |
+          # Configuración básica
+          ENTORNO = {{ entorno.nombre }}
+          DEBUG = {{ entorno.debug }}
+          LOG_LEVEL = {{ entorno.log_level }}
+        dest: '{{ directorio_base }}/config-basica.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when: entorno.debug == true
+
+    # ===========================================
+    # TAREA 3: Condiciones con AND (&&)
+    # ===========================================
+    - name: Configurar SSL si está habilitado y certificado disponible
+      copy:
+        content: |
+          # Configuración SSL
+          SSL_ENABLED = true
+          SSL_CERT = /etc/ssl/certs/app.crt
+          SSL_KEY = /etc/ssl/private/app.key
+        dest: '{{ directorio_base }}/ssl.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when:
+        - servicios.web.ssl == true
+        - seguridad.ssl_cert == true
+        - servicios.web.habilitado == true
+
+    # ===========================================
+    # TAREA 4: Condiciones con OR (||)
+    # ===========================================
+    - name: Crear archivo de backup si es producción o backup está habilitado
+      copy:
+        content: |
+          # Configuración de backup
+          BACKUP_ENABLED = true
+          BACKUP_SCHEDULE = "0 2 * * *"
+          BACKUP_RETENTION = 30
+        dest: '{{ directorio_base }}/backup.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when:
+        - entorno.nombre == "produccion" or seguridad.backup == true
+
+    # ===========================================
+    # TAREA 5: Condiciones con NOT (!)
+    # ===========================================
+    - name: Crear archivo de desarrollo si NO es producción
+      copy:
+        content: |
+          # Configuración de desarrollo
+          DEV_MODE = true
+          HOT_RELOAD = true
+          DEBUG_TOOLS = true
+        dest: '{{ directorio_base }}/dev.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when: entorno.nombre != "produccion"
+
+    # ===========================================
+    # TAREA 6: Condiciones basadas en facts del sistema
+    # ===========================================
+    - name: Configurar para macOS específicamente
+      copy:
+        content: |
+          # Configuración específica de macOS
+          OS = {{ ansible_system }}
+          ARCH = {{ ansible_architecture }}
+          USER = {{ ansible_user_id }}
+        dest: '{{ directorio_base }}/macos.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when: ansible_system == "Darwin"
+
+    - name: Configurar para Linux específicamente
+      copy:
+        content: |
+          # Configuración específica de Linux
+          OS = {{ ansible_system }}
+          DISTRO = {{ ansible_distribution }}
+          VERSION = {{ ansible_distribution_version }}
+        dest: '{{ directorio_base }}/linux.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when: ansible_system == "Linux"
+
+    # ===========================================
+    # TAREA 7: Condiciones con múltiples operadores
+    # ===========================================
+    - name: Configurar monitoreo avanzado
+      copy:
+        content: |
+          # Configuración de monitoreo avanzado
+          MONITORING_ENABLED = true
+          CPU_THRESHOLD = {{ umbrales.cpu }}
+          MEMORY_THRESHOLD = {{ umbrales.memoria }}
+          DISK_THRESHOLD = {{ umbrales.disco }}
+        dest: '{{ directorio_base }}/monitoring.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when:
+        - seguridad.monitoring == true
+        - (entorno.nombre == "produccion" or entorno.nombre == "staging")
+        - umbrales.cpu is defined and umbrales.cpu > 0
+
+    # ===========================================
+    # TAREA 8: Condiciones con loops y filtros
+    # ===========================================
+    - name: Crear configuraciones de servicios habilitados
+      copy:
+        content: |
+          # Configuración de {{ item.key }}
+          SERVICE_NAME = {{ item.value.nombre | default(item.key) }}
+          SERVICE_PORT = {{ item.value.puerto }}
+          SERVICE_TYPE = {{ item.value.tipo | default('unknown') }}
+          SERVICE_VERSION = {{ item.value.version | default('1.0') }}
+        dest: '{{ directorio_base }}/{{ item.key }}.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ servicios | dict2items }}'
+      when: item.value.habilitado == true
+
+    # ===========================================
+    # TAREA 9: Condiciones con usuarios activos
+    # ===========================================
+    - name: Crear configuraciones de usuarios habilitados
+      copy:
+        content: |
+          # Configuración de usuario {{ item.nombre }}
+          USER_NAME = {{ item.nombre }}
+          USER_ROLE = {{ item.rol }}
+          USER_ENABLED = {{ item.habilitado }}
+        dest: '{{ directorio_base }}/user-{{ item.nombre }}.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ usuarios }}'
+      when:
+        - item.habilitado == true
+        - item.rol != "invitado"
+
+    # ===========================================
+    # TAREA 10: Bloques con manejo de errores
+    # ===========================================
+    - name: Configurar servicios críticos
+      block:
+        - name: Crear configuración de web server
+          copy:
+            content: |
+              # Configuración crítica de web server
+              WEB_ENABLED = {{ servicios.web.habilitado }}
+              WEB_PORT = {{ servicios.web.puerto }}
+              WEB_SSL = {{ servicios.web.ssl }}
+            dest: '{{ directorio_base }}/web-critical.conf'
+            mode: '0644'
+            owner: '{{ ansible_user_id }}'
+            group: '{{ ansible_user_gid }}'
+          when: servicios.web.habilitado == true
+
+        - name: Crear configuración de base de datos
+          copy:
+            content: |
+              # Configuración crítica de base de datos
+              DB_ENABLED = {{ servicios.db.habilitado }}
+              DB_PORT = {{ servicios.db.puerto }}
+              DB_TYPE = {{ servicios.db.tipo }}
+            dest: '{{ directorio_base }}/db-critical.conf'
+            mode: '0644'
+            owner: '{{ ansible_user_id }}'
+            group: '{{ ansible_user_gid }}'
+          when: servicios.db.habilitado == true
+
+      rescue:
+        - name: Manejar error en configuración crítica
+          debug:
+            msg: |
+              ❌ ERROR EN CONFIGURACIÓN CRÍTICA
+              Servicio: {{ item }}
+              Tiempo: {{ ansible_date_time.iso8601 }}
+              Acción: Revisar configuración
+          loop: "{{ ['web', 'db'] }}"
+
+      always:
+        - name: Limpiar archivos temporales
+          debug:
+            msg: |
+              🧹 LIMPIEZA COMPLETADA
+              Directorio: {{ directorio_base }}
+              Tiempo: {{ ansible_date_time.iso8601 }}
+
+    # ===========================================
+    # TAREA 11: Condiciones con expresiones complejas
+    # ===========================================
+    - name: Crear configuración de firewall
+      copy:
+        content: |
+          # Configuración de firewall
+          FIREWALL_ENABLED = {{ seguridad.firewall }}
+          ALLOWED_PORTS = {% for key, servicio in servicios.items() %}{% if servicio.habilitado %}{{ servicio.puerto }}{% if not loop.last %},{% endif %}{% endif %}{% endfor %}
+        dest: '{{ directorio_base }}/firewall.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when:
+        - seguridad.firewall == true
+        - servicios is defined
+
+    # ===========================================
+    # TAREA 12: Condiciones con validación de variables
+    # ===========================================
+    - name: Validar configuración antes de crear archivo final
+      assert:
+        that:
+          - entorno.nombre is defined
+          - entorno.nombre != ""
+          - servicios is defined
+          - servicios | length > 0
+        fail_msg: 'Configuración inválida: faltan variables requeridas'
+        success_msg: 'Configuración válida, procediendo con despliegue'
+
+    - name: Crear archivo de configuración final
+      copy:
+        content: |
+          # ===========================================
+          # CONFIGURACIÓN FINAL - {{ ansible_date_time.iso8601 }}
+          # ===========================================
+
+          [entorno]
+          nombre = {{ entorno.nombre }}
+          debug = {{ entorno.debug }}
+          log_level = {{ entorno.log_level }}
+          max_connections = {{ entorno.max_connections }}
+
+          [servicios]
+          {% for key, servicio in servicios.items() %}
+          {% if servicio.habilitado %}
+          {{ key }}:
+            habilitado = {{ servicio.habilitado }}
+            puerto = {{ servicio.puerto }}
+            {% if servicio.tipo is defined %}
+            tipo = {{ servicio.tipo }}
+            {% endif %}
+            {% if servicio.version is defined %}
+            version = {{ servicio.version }}
+            {% endif %}
+          {% endif %}
+          {% endfor %}
+
+          [seguridad]
+          firewall = {{ seguridad.firewall }}
+          ssl_cert = {{ seguridad.ssl_cert }}
+          backup = {{ seguridad.backup }}
+          monitoring = {{ seguridad.monitoring }}
+
+          [sistema]
+          hostname = {{ ansible_hostname }}
+          os = {{ ansible_system }}
+          arch = {{ ansible_architecture }}
+          user = {{ ansible_user_id }}
+
+          [usuarios_activos]
+          {% for usuario in usuarios %}
+          {% if usuario.habilitado and usuario.rol != 'invitado' %}
+          - {{ usuario.nombre }} ({{ usuario.rol }})
+          {% endif %}
+          {% endfor %}
+
+          [umbrales]
+          cpu = {{ umbrales.cpu }}
+          memoria = {{ umbrales.memoria }}
+          disco = {{ umbrales.disco }}
+
+          # ===========================================
+          # FIN DE CONFIGURACIÓN
+          # ===========================================
+        dest: '{{ directorio_base }}/config-final.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    # ===========================================
+    # TAREA 13: Mostrar resumen final
+    # ===========================================
+    - name: Mostrar resumen de condiciones aplicadas
+      debug:
+        msg: |
+          🎯 RESUMEN DE CONDICIONES AVANZADAS
+          ===========================================
+
+          ✅ Entorno: {{ entorno.nombre }}
+          ✅ Debug habilitado: {{ entorno.debug }}
+          ✅ Servicios habilitados: {% set count = 0 %}{% for key, servicio in servicios.items() %}{% if servicio.habilitado %}{% set count = count + 1 %}{% endif %}{% endfor %}{{ count }}
+          ✅ Usuarios activos: {% set count = 0 %}{% for usuario in usuarios %}{% if usuario.habilitado %}{% set count = count + 1 %}{% endif %}{% endfor %}{{ count }}
+          ✅ Firewall: {{ seguridad.firewall }}
+          ✅ SSL: {{ seguridad.ssl_cert }}
+          ✅ Backup: {{ seguridad.backup }}
+          ✅ Monitoreo: {{ seguridad.monitoring }}
+
+          📁 Archivos creados en: {{ directorio_base }}
+          🕐 Tiempo: {{ ansible_date_time.iso8601 }}
+
+          🔍 Condiciones aplicadas:
+          - Condiciones simples (debug == true)
+          - Condiciones AND (SSL + certificado + habilitado)
+          - Condiciones OR (producción OR backup)
+          - Condiciones NOT (no producción)
+          - Condiciones de sistema (macOS/Linux)
+          - Condiciones con loops (servicios habilitados)
+          - Bloques con manejo de errores
+          - Validación de variables

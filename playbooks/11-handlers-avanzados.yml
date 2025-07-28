@@ -1,0 +1,386 @@
+---
+# ===========================================
+# PLAYBOOK: HANDLERS AVANZADOS EN ANSIBLE
+# ===========================================
+# Este playbook demuestra handlers avanzados con:
+# - Múltiples notificaciones
+# - Dependencias entre handlers
+# - Condiciones complejas
+# - Bloques de manejo de errores
+
+- name: Demostrar Handlers Avanzados
+  hosts: local
+  gather_facts: yes
+
+  vars:
+    directorio_base: '/tmp/ansible-handlers-avanzados'
+    app_name: 'mi-aplicacion-avanzada'
+
+    # Configuraciones de servicios
+    servicios:
+      web:
+        nombre: 'nginx'
+        puerto: 8080
+        config_file: 'web.conf'
+        log_file: 'web.log'
+      db:
+        nombre: 'mysql'
+        puerto: 3306
+        config_file: 'db.conf'
+        log_file: 'db.log'
+      cache:
+        nombre: 'redis'
+        puerto: 6379
+        config_file: 'cache.conf'
+        log_file: 'cache.log'
+
+    # Estados de servicios
+    estados_servicios:
+      web: 'running'
+      db: 'running'
+      cache: 'stopped'
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Crear estructura de directorios
+    # ===========================================
+    - name: Crear estructura de directorios
+      file:
+        path: '{{ item }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop:
+        - '{{ directorio_base }}'
+        - '{{ directorio_base }}/config'
+        - '{{ directorio_base }}/logs'
+        - '{{ directorio_base }}/data'
+        - '{{ directorio_base }}/scripts'
+      notify: 'actualizar estructura'
+
+    # ===========================================
+    # TAREA 2: Crear archivos de configuración
+    # ===========================================
+    - name: Crear archivos de configuración de servicios
+      copy:
+        content: |
+          # Configuración de {{ servicios[item.key].nombre }}
+          # Generado automáticamente por Ansible
+
+          [{{ item.key }}]
+          nombre = {{ servicios[item.key].nombre }}
+          puerto = {{ servicios[item.key].puerto }}
+          estado = {{ estados_servicios[item.key] }}
+
+          [logging]
+          archivo = {{ directorio_base }}/logs/{{ servicios[item.key].log_file }}
+          nivel = INFO
+
+          [monitoring]
+          habilitado = true
+          intervalo = 30
+        dest: '{{ directorio_base }}/config/{{ servicios[item.key].config_file }}'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ servicios | dict2items }}'
+      notify:
+        - 'reiniciar {{ item.key }}'
+        - 'verificar estado {{ item.key }}'
+        - 'actualizar monitoreo'
+
+    # ===========================================
+    # TAREA 3: Crear scripts de gestión
+    # ===========================================
+    - name: Crear scripts de gestión de servicios
+      copy:
+        content: |
+          #!/bin/bash
+          # Script de gestión para {{ servicios[item.key].nombre }}
+
+          SERVICE_NAME="{{ servicios[item.key].nombre }}"
+          CONFIG_FILE="{{ directorio_base }}/config/{{ servicios[item.key].config_file }}"
+          LOG_FILE="{{ directorio_base }}/logs/{{ servicios[item.key].log_file }}"
+
+          case "$1" in
+            start)
+              echo "Iniciando $SERVICE_NAME..."
+              # Lógica de inicio
+              ;;
+            stop)
+              echo "Deteniendo $SERVICE_NAME..."
+              # Lógica de parada
+              ;;
+            restart)
+              echo "Reiniciando $SERVICE_NAME..."
+              # Lógica de reinicio
+              ;;
+            status)
+              echo "Estado de $SERVICE_NAME: {{ estados_servicios[item.key] }}"
+              ;;
+            *)
+              echo "Uso: $0 {start|stop|restart|status}"
+              exit 1
+              ;;
+          esac
+        dest: '{{ directorio_base }}/scripts/{{ servicios[item.key].nombre }}.sh'
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ servicios | dict2items }}'
+      notify: 'actualizar permisos scripts'
+
+    # ===========================================
+    # TAREA 4: Crear archivos de log
+    # ===========================================
+    - name: Crear archivos de log iniciales
+      copy:
+        content: |
+          [{{ ansible_date_time.iso8601 }}] INFO: Inicializando {{ servicios[item.key].nombre }}
+          [{{ ansible_date_time.iso8601 }}] INFO: Puerto: {{ servicios[item.key].puerto }}
+          [{{ ansible_date_time.iso8601 }}] INFO: Estado: {{ estados_servicios[item.key] }}
+        dest: '{{ directorio_base }}/logs/{{ servicios[item.key].log_file }}'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ servicios | dict2items }}'
+      notify: 'rotar logs'
+
+    # ===========================================
+    # TAREA 5: Modificar configuraciones específicas
+    # ===========================================
+    - name: Modificar configuración de web server
+      lineinfile:
+        path: '{{ directorio_base }}/config/web.conf'
+        line: 'puerto = 9090'
+        regexp: '^puerto ='
+      notify:
+        - 'reiniciar web'
+        - 'verificar conectividad web'
+      when: estados_servicios.web == "running"
+
+    - name: Modificar configuración de base de datos
+      lineinfile:
+        path: '{{ directorio_base }}/config/db.conf'
+        line: 'max_connections = 200'
+        insertafter: '^estado ='
+      notify:
+        - 'reiniciar db'
+        - 'verificar estado db'
+      when: estados_servicios.db == "running"
+
+    # ===========================================
+    # TAREA 6: Crear archivo de monitoreo
+    # ===========================================
+    - name: Crear archivo de configuración de monitoreo
+      copy:
+        content: |
+          # Configuración de monitoreo
+          # Generado automáticamente por Ansible
+
+          [monitoring]
+          aplicacion = {{ app_name }}
+          directorio_base = {{ directorio_base }}
+          timestamp = {{ ansible_date_time.iso8601 }}
+
+          [servicios]
+          {% for key, servicio in servicios.items() %}
+          {{ key }}:
+            nombre = {{ servicio.nombre }}
+            puerto = {{ servicio.puerto }}
+            estado = {{ estados_servicios[key] }}
+            config = {{ directorio_base }}/config/{{ servicio.config_file }}
+            log = {{ directorio_base }}/logs/{{ servicio.log_file }}
+          {% endfor %}
+
+          [alertas]
+          email = admin@example.com
+          webhook = https://hooks.slack.com/services/xxx/yyy/zzz
+          umbral_cpu = 80
+          umbral_memoria = 85
+        dest: '{{ directorio_base }}/monitoring.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      notify: 'actualizar monitoreo'
+
+    # ===========================================
+    # TAREA 7: Crear reporte final
+    # ===========================================
+    - name: Crear reporte de despliegue
+      copy:
+        content: |
+          ===========================================
+          REPORTE DE DESPLIEGUE - {{ ansible_date_time.iso8601 }}
+          ===========================================
+
+          APLICACIÓN: {{ app_name }}
+          HOST: {{ ansible_hostname }}
+          USUARIO: {{ ansible_user_id }}
+
+          SERVICIOS CONFIGURADOS:
+          {% for key, servicio in servicios.items() %}
+          - {{ servicio.nombre }} ({{ key }})
+            Puerto: {{ servicio.puerto }}
+            Estado: {{ estados_servicios[key] }}
+            Config: {{ directorio_base }}/config/{{ servicio.config_file }}
+            Log: {{ directorio_base }}/logs/{{ servicio.log_file }}
+          {% endfor %}
+
+          ARCHIVOS CREADOS:
+          - Directorio base: {{ directorio_base }}
+          - Configuraciones: {{ directorio_base }}/config/
+          - Logs: {{ directorio_base }}/logs/
+          - Scripts: {{ directorio_base }}/scripts/
+          - Monitoreo: {{ directorio_base }}/monitoring.conf
+
+          HANDLERS EJECUTADOS:
+          - actualizar estructura
+          - reiniciar servicios
+          - verificar estados
+          - actualizar monitoreo
+          - rotar logs
+          - actualizar permisos scripts
+
+          ESTADO: ✅ DESPLIEGUE COMPLETADO
+          ===========================================
+        dest: '{{ directorio_base }}/reporte-despliegue.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      notify: 'actualizar reportes'
+
+  # ===========================================
+  # HANDLERS AVANZADOS
+  # ===========================================
+  handlers:
+    # ===========================================
+    # HANDLER 1: Actualizar estructura
+    # ===========================================
+    - name: actualizar estructura
+      debug:
+        msg: |
+          📁 ACTUALIZANDO ESTRUCTURA
+          Directorio: {{ directorio_base }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+          Acción: Estructura de directorios creada/actualizada
+
+    # ===========================================
+    # HANDLER 2: Reiniciar servicios específicos
+    # ===========================================
+    - name: reiniciar web
+      debug:
+        msg: |
+          🌐 REINICIANDO WEB SERVER
+          Servicio: {{ servicios.web.nombre }}
+          Puerto: {{ servicios.web.puerto }}
+          Config: {{ directorio_base }}/config/{{ servicios.web.config_file }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    - name: reiniciar db
+      debug:
+        msg: |
+          🗄️ REINICIANDO BASE DE DATOS
+          Servicio: {{ servicios.db.nombre }}
+          Puerto: {{ servicios.db.puerto }}
+          Config: {{ directorio_base }}/config/{{ servicios.db.config_file }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    - name: reiniciar cache
+      debug:
+        msg: |
+          ⚡ REINICIANDO CACHE
+          Servicio: {{ servicios.cache.nombre }}
+          Puerto: {{ servicios.cache.puerto }}
+          Config: {{ directorio_base }}/config/{{ servicios.cache.config_file }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    # ===========================================
+    # HANDLER 3: Verificar estados
+    # ===========================================
+    - name: verificar estado web
+      debug:
+        msg: |
+          🔍 VERIFICANDO ESTADO WEB
+          Servicio: {{ servicios.web.nombre }}
+          Estado esperado: {{ estados_servicios.web }}
+          Puerto: {{ servicios.web.puerto }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    - name: verificar estado db
+      debug:
+        msg: |
+          🔍 VERIFICANDO ESTADO DB
+          Servicio: {{ servicios.db.nombre }}
+          Estado esperado: {{ estados_servicios.db }}
+          Puerto: {{ servicios.db.puerto }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    - name: verificar estado cache
+      debug:
+        msg: |
+          🔍 VERIFICANDO ESTADO CACHE
+          Servicio: {{ servicios.cache.nombre }}
+          Estado esperado: {{ estados_servicios.cache }}
+          Puerto: {{ servicios.cache.puerto }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    # ===========================================
+    # HANDLER 4: Verificar conectividad
+    # ===========================================
+    - name: verificar conectividad web
+      debug:
+        msg: |
+          🌐 VERIFICANDO CONECTIVIDAD WEB
+          Puerto: {{ servicios.web.puerto }}
+          URL: http://localhost:{{ servicios.web.puerto }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    # ===========================================
+    # HANDLER 5: Actualizar monitoreo
+    # ===========================================
+    - name: actualizar monitoreo
+      debug:
+        msg: |
+          📊 ACTUALIZANDO MONITOREO
+          Archivo: {{ directorio_base }}/monitoring.conf
+          Aplicación: {{ app_name }}
+          Servicios monitoreados: {{ servicios | length }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    # ===========================================
+    # HANDLER 6: Rotar logs
+    # ===========================================
+    - name: rotar logs
+      debug:
+        msg: |
+          📝 ROTANDO LOGS
+          Directorio: {{ directorio_base }}/logs/
+          Archivos: {{ servicios | length }} archivos de log
+          Tiempo: {{ ansible_date_time.iso8601 }}
+          Acción: Comprimir logs antiguos y crear nuevos
+
+    # ===========================================
+    # HANDLER 7: Actualizar permisos scripts
+    # ===========================================
+    - name: actualizar permisos scripts
+      debug:
+        msg: |
+          🔧 ACTUALIZANDO PERMISOS DE SCRIPTS
+          Directorio: {{ directorio_base }}/scripts/
+          Scripts: {{ servicios | length }} scripts de gestión
+          Permisos: 755 (ejecutable)
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    # ===========================================
+    # HANDLER 8: Actualizar reportes
+    # ===========================================
+    - name: actualizar reportes
+      debug:
+        msg: |
+          📋 ACTUALIZANDO REPORTES
+          Archivo: {{ directorio_base }}/reporte-despliegue.txt
+          Aplicación: {{ app_name }}
+          Servicios: {{ servicios | length }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
