@@ -1,0 +1,168 @@
+---
+# ===========================================
+# PLAYBOOK: VARIABLES DE INVENTARIO
+# ===========================================
+# Este playbook demuestra cómo usar variables de inventario
+# Las variables se definen en inventory.ini y se usan aquí
+
+- name: Demostrar Variables de Inventario
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Mostrar variables globales
+    # ===========================================
+    - name: Mostrar variables globales
+      debug:
+        msg: |
+          === VARIABLES GLOBALES ===
+          Hostname: {{ ansible_hostname }}
+          Sistema: {{ ansible_system }}
+          Timezone: {{ timezone }}
+          Python: {{ python_version }}
+          Log Level: {{ log_level }}
+
+    # ===========================================
+    # TAREA 2: Mostrar variables específicas del host
+    # ===========================================
+    - name: Mostrar variables específicas del host
+      debug:
+        msg: |
+          === VARIABLES DEL HOST ===
+          Host: {{ inventory_hostname }}
+          Entorno: {{ app_env }}
+          Nombre de la App: {{ app_name }}
+          Conexión: {{ ansible_connection }}
+
+    # ===========================================
+    # TAREA 3: Mostrar variables según el grupo
+    # ===========================================
+    - name: Mostrar variables de servidor web
+      debug:
+        msg: |
+          === VARIABLES DE SERVIDOR WEB ===
+          Puerto Web: {{ web_port | default('No definido') }}
+          Servidor Web: {{ web_server | default('No definido') }}
+          Directorio Raíz: {{ web_root | default('No definido') }}
+          SSL Habilitado: {{ ssl_enabled | default('No definido') }}
+          Conexiones Máximas: {{ max_connections | default('No definido') }}
+      when: inventory_hostname in groups['webservers']
+
+    - name: Mostrar variables de base de datos
+      debug:
+        msg: |
+          === VARIABLES DE BASE DE DATOS ===
+          Puerto DB: {{ db_port | default('No definido') }}
+          Tipo DB: {{ db_type | default('No definido') }}
+          Nombre DB: {{ db_name | default('No definido') }}
+          Usuario DB: {{ db_user | default('No definido') }}
+          Backup Habilitado: {{ backup_enabled | default('No definido') }}
+          Conexiones Máximas: {{ max_connections | default('No definido') }}
+      when: inventory_hostname in groups['dbservers']
+
+    - name: Mostrar variables de aplicación
+      debug:
+        msg: |
+          === VARIABLES DE APLICACIÓN ===
+          Puerto App: {{ app_port | default('No definido') }}
+          Framework: {{ app_framework | default('No definido') }}
+          Debug: {{ app_debug | default('No definido') }}
+          Timeout de Sesión: {{ session_timeout | default('No definido') }}
+      when: inventory_hostname in groups['applications']
+
+    - name: Mostrar variables de monitoreo
+      debug:
+        msg: |
+          === VARIABLES DE MONITOREO ===
+          Puerto Monitoreo: {{ monitoring_port | default('No definido') }}
+          Herramienta: {{ monitoring_tool | default('No definido') }}
+          Retención de Métricas: {{ metrics_retention_days | default('No definido') }} días
+          Alertas Habilitadas: {{ alert_enabled | default('No definido') }}
+          Dashboard Habilitado: {{ dashboard_enabled | default('No definido') }}
+      when: inventory_hostname in groups['monitoring']
+
+    # ===========================================
+    # TAREA 4: Crear archivos de configuración usando variables
+    # ===========================================
+    - name: Crear directorio de configuración
+      file:
+        path: '/tmp/ansible-inventory-demo'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    - name: Crear archivo de configuración del host
+      copy:
+        content: |
+          # Configuración del host {{ inventory_hostname }}
+          # Generado automáticamente por Ansible
+
+          [host]
+          hostname = {{ ansible_hostname }}
+          ip = {{ ansible_default_ipv4.address if ansible_default_ipv4 is defined else '127.0.0.1' }}
+          entorno = {{ app_env }}
+          nombre_app = {{ app_name }}
+
+          [global]
+          timezone = {{ timezone }}
+          python_version = {{ python_version }}
+          log_level = {{ log_level }}
+
+          {% if inventory_hostname in groups['webservers'] %}
+          [web]
+          puerto = {{ web_port }}
+          servidor = {{ web_server }}
+          directorio_raiz = {{ web_root }}
+          ssl = {{ ssl_enabled }}
+          max_conexiones = {{ max_connections }}
+          {% endif %}
+
+          {% if inventory_hostname in groups['dbservers'] %}
+          [database]
+          puerto = {{ db_port }}
+          tipo = {{ db_type }}
+          nombre = {{ db_name }}
+          usuario = {{ db_user }}
+          backup = {{ backup_enabled }}
+          max_conexiones = {{ max_connections }}
+          {% endif %}
+
+          {% if inventory_hostname in groups['applications'] %}
+          [application]
+          puerto = {{ app_port }}
+          framework = {{ app_framework }}
+          debug = {{ app_debug }}
+          timeout_sesion = {{ session_timeout }}
+          {% endif %}
+
+          {% if inventory_hostname in groups['monitoring'] %}
+          [monitoring]
+          puerto = {{ monitoring_port }}
+          herramienta = {{ monitoring_tool }}
+          retencion_metricas = {{ metrics_retention_days }}
+          alertas = {{ alert_enabled }}
+          dashboard = {{ dashboard_enabled }}
+          {% endif %}
+        dest: '/tmp/ansible-inventory-demo/config-{{ inventory_hostname }}.ini'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    # ===========================================
+    # TAREA 5: Mostrar resumen final
+    # ===========================================
+    - name: Mostrar resumen de configuración
+      debug:
+        msg: |
+          === RESUMEN DE CONFIGURACIÓN ===
+          Host: {{ inventory_hostname }}
+          Entorno: {{ app_env }}
+          Grupos: {{ ansible_play_hosts }}
+          Archivo de configuración: /tmp/ansible-inventory-demo/config-{{ inventory_hostname }}.ini
+
+          Variables disponibles:
+          - Globales: timezone, python_version, log_level
+          - Host: app_env, app_name
+          - Grupo: Según el grupo del host
