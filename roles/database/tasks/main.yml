@@ -1,0 +1,106 @@
+---
+# ===========================================
+# ROL: DATABASE
+# ===========================================
+# Este rol configura una base de datos básica
+# Incluye MySQL/PostgreSQL, configuración y datos de ejemplo
+
+- name: Mostrar información del rol database
+  debug:
+    msg: |
+      🗄️ INICIANDO ROL: DATABASE
+      Rol: {{ role_name }}
+      Host: {{ inventory_hostname }}
+      Usuario: {{ ansible_user_id }}
+
+- name: Crear directorio base de la base de datos
+  file:
+    path: '{{ db_base_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de datos
+  file:
+    path: '{{ db_data_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de logs
+  file:
+    path: '{{ db_logs_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de configuración
+  file:
+    path: '{{ db_config_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear archivo de configuración de la base de datos
+  template:
+    src: database.conf.j2
+    dest: '{{ db_config_dir }}/database.conf'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+  notify: restart database
+
+- name: Crear script de inicialización de la base de datos
+  template:
+    src: init.sql.j2
+    dest: '{{ db_data_dir }}/init.sql'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear script de respaldo
+  template:
+    src: backup.sh.j2
+    dest: '{{ db_base_dir }}/backup.sh'
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear datos de ejemplo
+  template:
+    src: sample_data.sql.j2
+    dest: '{{ db_data_dir }}/sample_data.sql'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear archivo de estado de la base de datos
+  copy:
+    content: |
+      # Estado de la base de datos
+      # Rol: {{ role_name }}
+      # Configurado: {{ ansible_date_time.iso8601 }}
+      # Host: {{ ansible_hostname }}
+      # Puerto: {{ db_port }}
+      # Directorio: {{ db_base_dir }}
+      # Estado: Activo
+    dest: '{{ db_base_dir }}/status.txt'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Mostrar resumen de la base de datos
+  debug:
+    msg: |
+      ✅ BASE DE DATOS CONFIGURADA
+      Rol: {{ role_name }}
+      Directorio: {{ db_base_dir }}
+      Puerto: {{ db_port }}
+      Base de datos: {{ db_name }}
+      Usuario: {{ db_user }}
+      Datos: {{ db_data_dir }}
+      Logs: {{ db_logs_dir }}

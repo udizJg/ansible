@@ -1,0 +1,21 @@
+---
+# ===========================================
+# HANDLERS - ROL MONITORING
+# ===========================================
+
+- name: restart monitoring
+  debug:
+    msg: |
+      📊 REINICIANDO MONITOREO
+      Rol: {{ role_name }}
+      Configuración: {{ monitoring_config_dir }}/monitoring.conf
+      Métricas: {{ monitoring_metrics_dir }}
+      Tiempo: {{ ansible_date_time.iso8601 }}
+
+- name: reload monitoring
+  debug:
+    msg: |
+      🔄 RECARGANDO MONITOREO
+      Rol: {{ role_name }}
+      Configuración: {{ monitoring_config_dir }}/monitoring.conf
+      Tiempo: {{ ansible_date_time.iso8601 }}

@@ -1,0 +1,23 @@
+# ===========================================
+# CONFIGURACIÓN DE MONITOREO
+# ===========================================
+# Generada automáticamente por Ansible
+# Rol: {{ role_name }}
+# Host: {{ ansible_hostname }}
+
+[monitoring]
+interval = {{ monitoring_interval }}
+retention_days = {{ monitoring_retention_days }}
+alert_threshold = {{ monitoring_alert_threshold }}
+
+[metrics]
+directory = {{ monitoring_metrics_dir }}
+enabled = true
+
+[alerts]
+directory = {{ monitoring_alerts_dir }}
+enabled = true
+
+[dashboards]
+directory = {{ monitoring_dashboards_dir }}
+enabled = true 

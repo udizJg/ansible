@@ -1,0 +1,23 @@
+---
+# ===========================================
+# VARIABLES POR DEFECTO - ROL DATABASE
+# ===========================================
+
+# Directorios de la base de datos
+db_base_dir: '/tmp/ansible-roles-demo/database'
+db_data_dir: '{{ db_base_dir }}/data'
+db_logs_dir: '{{ db_base_dir }}/logs'
+db_config_dir: '{{ db_base_dir }}/config'
+
+# Configuración de la base de datos
+db_name: 'mi_aplicacion'
+db_user: 'app_user'
+db_password: 'app_password'
+db_port: 3306
+db_host: 'localhost'
+
+# Configuración del servidor de base de datos
+db_max_connections: 100
+db_buffer_pool_size: '256M'
+db_log_file: '{{ db_logs_dir }}/database.log'
+db_error_log: '{{ db_logs_dir }}/error.log'

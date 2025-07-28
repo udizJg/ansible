@@ -1,0 +1,25 @@
+---
+# ===========================================
+# VARIABLES POR DEFECTO - ROL WEB SERVER
+# ===========================================
+# Estas variables pueden ser sobrescritas por el usuario
+
+# Directorios del servidor web
+web_base_dir: '/tmp/ansible-roles-demo/web'
+web_static_dir: '{{ web_base_dir }}/static'
+web_logs_dir: '{{ web_base_dir }}/logs'
+web_config_dir: '{{ web_base_dir }}/config'
+
+# Configuración del sitio web
+web_site_title: 'Mi Sitio Web - Ansible'
+web_port: 8080
+web_server_name: 'localhost'
+
+# Configuración de nginx
+nginx_worker_processes: 1
+nginx_worker_connections: 1024
+nginx_sendfile: 'on'
+nginx_tcp_nopush: 'on'
+nginx_tcp_nodelay: 'on'
+nginx_keepalive_timeout: 65
+nginx_types_hash_max_size: 2048

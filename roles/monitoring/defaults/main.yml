@@ -1,0 +1,16 @@
+---
+# ===========================================
+# VARIABLES POR DEFECTO - ROL MONITORING
+# ===========================================
+
+# Directorios de monitoreo
+monitoring_base_dir: '/tmp/ansible-roles-demo/monitoring'
+monitoring_metrics_dir: '{{ monitoring_base_dir }}/metrics'
+monitoring_alerts_dir: '{{ monitoring_base_dir }}/alerts'
+monitoring_dashboards_dir: '{{ monitoring_base_dir }}/dashboards'
+monitoring_config_dir: '{{ monitoring_base_dir }}/config'
+
+# Configuración de monitoreo
+monitoring_interval: 60
+monitoring_retention_days: 30
+monitoring_alert_threshold: 80

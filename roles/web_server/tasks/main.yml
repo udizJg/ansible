@@ -1,0 +1,142 @@
+---
+# ===========================================
+# ROL: WEB SERVER
+# ===========================================
+# Este rol configura un servidor web básico
+# Incluye nginx, configuración y archivos estáticos
+
+- name: Mostrar información del rol web_server
+  debug:
+    msg: |
+      🚀 INICIANDO ROL: WEB SERVER
+      Rol: {{ role_name }}
+      Host: {{ inventory_hostname }}
+      Usuario: {{ ansible_user_id }}
+
+- name: Crear directorio base del servidor web
+  file:
+    path: '{{ web_base_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de archivos estáticos
+  file:
+    path: '{{ web_static_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de logs
+  file:
+    path: '{{ web_logs_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de configuración
+  file:
+    path: '{{ web_config_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de sitios disponibles
+  file:
+    path: '{{ web_config_dir }}/sites-available'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear archivo de configuración de nginx
+  template:
+    src: nginx.conf.j2
+    dest: '{{ web_config_dir }}/nginx.conf'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+  notify: reload nginx
+
+- name: Crear archivo de sitio web
+  template:
+    src: site.conf.j2
+    dest: '{{ web_config_dir }}/sites-available/default'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+  notify: reload nginx
+
+- name: Crear página de inicio
+  copy:
+    content: |
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <title>{{ web_site_title }}</title>
+          <style>
+              body { font-family: Arial, sans-serif; margin: 40px; }
+              .container { max-width: 800px; margin: 0 auto; }
+              .header { background: #007cba; color: white; padding: 20px; border-radius: 5px; }
+              .content { margin: 20px 0; }
+              .footer { background: #f0f0f0; padding: 10px; text-align: center; }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header">
+                  <h1>{{ web_site_title }}</h1>
+                  <p>Servidor web configurado con Ansible</p>
+              </div>
+              <div class="content">
+                  <h2>Información del servidor</h2>
+                  <ul>
+                      <li><strong>Hostname:</strong> {{ ansible_hostname }}</li>
+                      <li><strong>Sistema:</strong> {{ ansible_system }}</li>
+                      <li><strong>Arquitectura:</strong> {{ ansible_architecture }}</li>
+                      <li><strong>Puerto:</strong> {{ web_port }}</li>
+                      <li><strong>Directorio:</strong> {{ web_base_dir }}</li>
+                  </ul>
+                  <h2>Rol: {{ role_name }}</h2>
+                  <p>Este sitio web fue configurado usando el rol <strong>{{ role_name }}</strong> de Ansible.</p>
+              </div>
+              <div class="footer">
+                  <p>Configurado el: {{ ansible_date_time.iso8601 }}</p>
+              </div>
+          </div>
+      </body>
+      </html>
+    dest: '{{ web_static_dir }}/index.html'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear archivo de estado del servidor web
+  copy:
+    content: |
+      # Estado del servidor web
+      # Rol: {{ role_name }}
+      # Configurado: {{ ansible_date_time.iso8601 }}
+      # Host: {{ ansible_hostname }}
+      # Puerto: {{ web_port }}
+      # Directorio: {{ web_base_dir }}
+      # Estado: Activo
+    dest: '{{ web_base_dir }}/status.txt'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Mostrar resumen del servidor web
+  debug:
+    msg: |
+      ✅ SERVIDOR WEB CONFIGURADO
+      Rol: {{ role_name }}
+      Directorio: {{ web_base_dir }}
+      Puerto: {{ web_port }}
+      Sitio: {{ web_site_title }}
+      Archivos estáticos: {{ web_static_dir }}
+      Logs: {{ web_logs_dir }}

@@ -1,0 +1,49 @@
+-- ===========================================
+-- DATOS DE EJEMPLO PARA LA BASE DE DATOS
+-- ===========================================
+-- Generado automáticamente por Ansible
+-- Rol: {{ role_name }}
+-- Host: {{ ansible_hostname }}
+
+USE {{ db_name }};
+
+-- Insertar usuarios de ejemplo
+INSERT INTO usuarios (nombre, email, password_hash, activo) VALUES
+('Admin Usuario', 'admin@example.com', '$2y$10$example_hash', true),
+('Juan Pérez', 'juan@example.com', '$2y$10$example_hash', true),
+('María García', 'maria@example.com', '$2y$10$example_hash', true),
+('Carlos López', 'carlos@example.com', '$2y$10$example_hash', false);
+
+-- Insertar productos de ejemplo
+INSERT INTO productos (nombre, descripcion, precio, stock, categoria) VALUES
+('Laptop Dell XPS 13', 'Laptop ultrabook de 13 pulgadas', 1299.99, 10, 'Electrónicos'),
+('iPhone 15 Pro', 'Smartphone de última generación', 999.99, 25, 'Electrónicos'),
+('Nike Air Max', 'Zapatillas deportivas', 129.99, 50, 'Ropa'),
+('Samsung 4K TV', 'Televisor 4K de 55 pulgadas', 799.99, 15, 'Electrónicos'),
+('Libro Python', 'Guía completa de Python', 49.99, 100, 'Libros'),
+('Cafetera Express', 'Cafetera automática', 299.99, 30, 'Hogar');
+
+-- Insertar pedidos de ejemplo
+INSERT INTO pedidos (usuario_id, total, estado) VALUES
+(1, 1299.99, 'entregado'),
+(2, 1129.98, 'procesando'),
+(3, 299.99, 'pendiente'),
+(1, 799.99, 'enviado');
+
+-- Insertar detalles de pedido
+INSERT INTO detalles_pedido (pedido_id, producto_id, cantidad, precio_unitario, subtotal) VALUES
+(1, 1, 1, 1299.99, 1299.99),
+(2, 2, 1, 999.99, 999.99),
+(2, 3, 1, 129.99, 129.99),
+(3, 6, 1, 299.99, 299.99),
+(4, 4, 1, 799.99, 799.99);
+
+-- Mostrar datos insertados
+SELECT 'Usuarios insertados:' as info;
+SELECT COUNT(*) as total_usuarios FROM usuarios;
+
+SELECT 'Productos insertados:' as info;
+SELECT COUNT(*) as total_productos FROM productos;
+
+SELECT 'Pedidos insertados:' as info;
+SELECT COUNT(*) as total_pedidos FROM pedidos; 

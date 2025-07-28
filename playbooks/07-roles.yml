@@ -1,0 +1,27 @@
+---
+# ===========================================
+# PLAYBOOK: ROLES EN ANSIBLE
+# ===========================================
+# Este playbook demuestra cómo usar roles
+# Los roles organizan playbooks en componentes reutilizables
+# Perfecto para proyectos grandes y mantenibles
+
+- name: Aprender Roles en Ansible
+  hosts: local
+  gather_facts: yes
+
+  # ===========================================
+  # ROLES - Componentes modulares
+  # ===========================================
+  roles:
+    # Rol para configurar un servidor web básico
+    - web_server
+
+    # Rol para configurar una base de datos
+    - database
+
+    # Rol para configurar una aplicación
+    - application
+
+    # Rol para configurar monitoreo
+    - monitoring

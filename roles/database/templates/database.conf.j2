@@ -1,0 +1,33 @@
+# ===========================================
+# CONFIGURACIÓN DE BASE DE DATOS
+# ===========================================
+# Generada automáticamente por Ansible
+# Rol: {{ role_name }}
+# Host: {{ ansible_hostname }}
+
+[database]
+# Configuración básica
+name = {{ db_name }}
+user = {{ db_user }}
+password = {{ db_password }}
+host = {{ db_host }}
+port = {{ db_port }}
+
+# Configuración de conexiones
+max_connections = {{ db_max_connections }}
+buffer_pool_size = {{ db_buffer_pool_size }}
+
+# Configuración de logs
+log_file = {{ db_log_file }}
+error_log = {{ db_error_log }}
+
+# Configuración de rendimiento
+query_cache_size = 32M
+query_cache_type = 1
+innodb_buffer_pool_size = {{ db_buffer_pool_size }}
+innodb_log_file_size = 64M
+innodb_flush_log_at_trx_commit = 2
+
+# Configuración de seguridad
+skip_networking = 0
+bind_address = 127.0.0.1 

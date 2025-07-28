@@ -1,0 +1,23 @@
+---
+# ===========================================
+# HANDLERS - ROL WEB SERVER
+# ===========================================
+
+- name: reload nginx
+  debug:
+    msg: |
+      🌐 RECARGANDO NGINX
+      Rol: {{ role_name }}
+      Configuración: {{ web_config_dir }}/nginx.conf
+      Sitio: {{ web_config_dir }}/sites-available/default
+      Puerto: {{ web_port }}
+      Tiempo: {{ ansible_date_time.iso8601 }}
+
+- name: restart nginx
+  debug:
+    msg: |
+      🔄 REINICIANDO NGINX
+      Rol: {{ role_name }}
+      Servicio: nginx
+      Puerto: {{ web_port }}
+      Tiempo: {{ ansible_date_time.iso8601 }}

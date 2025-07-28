@@ -1,0 +1,38 @@
+# ===========================================
+# CONFIGURACIÓN DE NGINX
+# ===========================================
+# Generada automáticamente por Ansible
+# Rol: {{ role_name }}
+# Host: {{ ansible_hostname }}
+
+user {{ ansible_user_id }};
+worker_processes {{ nginx_worker_processes }};
+pid /tmp/nginx.pid;
+
+events {
+    worker_connections {{ nginx_worker_connections }};
+}
+
+http {
+    sendfile {{ nginx_sendfile }};
+    tcp_nopush {{ nginx_tcp_nopush }};
+    tcp_nodelay {{ nginx_tcp_nodelay }};
+    keepalive_timeout {{ nginx_keepalive_timeout }};
+    types_hash_max_size {{ nginx_types_hash_max_size }};
+
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Logs
+    access_log {{ web_logs_dir }}/access.log;
+    error_log {{ web_logs_dir }}/error.log;
+
+    # Gzip
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+
+    # Incluir configuraciones de sitios
+    include {{ web_config_dir }}/sites-available/*;
+} 

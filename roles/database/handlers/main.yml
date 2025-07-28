@@ -1,0 +1,23 @@
+---
+# ===========================================
+# HANDLERS - ROL DATABASE
+# ===========================================
+
+- name: restart database
+  debug:
+    msg: |
+      🗄️ REINICIANDO BASE DE DATOS
+      Rol: {{ role_name }}
+      Base de datos: {{ db_name }}
+      Puerto: {{ db_port }}
+      Configuración: {{ db_config_dir }}/database.conf
+      Tiempo: {{ ansible_date_time.iso8601 }}
+
+- name: reload database
+  debug:
+    msg: |
+      🔄 RECARGANDO BASE DE DATOS
+      Rol: {{ role_name }}
+      Base de datos: {{ db_name }}
+      Puerto: {{ db_port }}
+      Tiempo: {{ ansible_date_time.iso8601 }}

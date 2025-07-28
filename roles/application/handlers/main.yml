@@ -1,0 +1,23 @@
+---
+# ===========================================
+# HANDLERS - ROL APPLICATION
+# ===========================================
+
+- name: restart application
+  debug:
+    msg: |
+      📱 REINICIANDO APLICACIÓN
+      Rol: {{ role_name }}
+      Aplicación: {{ app_name }}
+      Puerto: {{ app_port }}
+      Configuración: {{ app_config_dir }}/app.conf
+      Tiempo: {{ ansible_date_time.iso8601 }}
+
+- name: reload application
+  debug:
+    msg: |
+      🔄 RECARGANDO APLICACIÓN
+      Rol: {{ role_name }}
+      Aplicación: {{ app_name }}
+      Puerto: {{ app_port }}
+      Tiempo: {{ ansible_date_time.iso8601 }}

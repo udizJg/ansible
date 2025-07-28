@@ -1,0 +1,23 @@
+---
+# ===========================================
+# VARIABLES POR DEFECTO - ROL APPLICATION
+# ===========================================
+
+# Directorios de la aplicación
+app_base_dir: '/tmp/ansible-roles-demo/application'
+app_src_dir: '{{ app_base_dir }}/src'
+app_config_dir: '{{ app_base_dir }}/config'
+app_logs_dir: '{{ app_base_dir }}/logs'
+
+# Configuración de la aplicación
+app_name: 'mi-aplicacion'
+app_port: 5000
+app_debug: true
+app_secret_key: 'mi-clave-secreta-cambiar-en-produccion'
+
+# Configuración de la base de datos
+app_db_host: 'localhost'
+app_db_port: 3306
+app_db_name: 'mi_aplicacion'
+app_db_user: 'app_user'
+app_db_password: 'app_password'

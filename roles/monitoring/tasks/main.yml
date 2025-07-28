@@ -1,0 +1,95 @@
+---
+# ===========================================
+# ROL: MONITORING
+# ===========================================
+# Este rol configura monitoreo básico
+# Incluye logs, métricas y alertas
+
+- name: Mostrar información del rol monitoring
+  debug:
+    msg: |
+      📊 INICIANDO ROL: MONITORING
+      Rol: {{ role_name }}
+      Host: {{ inventory_hostname }}
+      Usuario: {{ ansible_user_id }}
+
+- name: Crear directorio base de monitoreo
+  file:
+    path: '{{ monitoring_base_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de métricas
+  file:
+    path: '{{ monitoring_metrics_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de alertas
+  file:
+    path: '{{ monitoring_alerts_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de dashboards
+  file:
+    path: '{{ monitoring_dashboards_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear directorio de configuración
+  file:
+    path: '{{ monitoring_config_dir }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear archivo de configuración de monitoreo
+  template:
+    src: monitoring.conf.j2
+    dest: '{{ monitoring_config_dir }}/monitoring.conf'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+  notify: restart monitoring
+
+- name: Crear script de recolección de métricas
+  template:
+    src: collect_metrics.sh.j2
+    dest: '{{ monitoring_base_dir }}/collect_metrics.sh'
+    mode: '0755'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Crear archivo de estado de monitoreo
+  copy:
+    content: |
+      # Estado del monitoreo
+      # Rol: {{ role_name }}
+      # Configurado: {{ ansible_date_time.iso8601 }}
+      # Host: {{ ansible_hostname }}
+      # Directorio: {{ monitoring_base_dir }}
+      # Estado: Activo
+    dest: '{{ monitoring_base_dir }}/status.txt'
+    mode: '0644'
+    owner: '{{ ansible_user_id }}'
+    group: '{{ ansible_user_gid }}'
+
+- name: Mostrar resumen del monitoreo
+  debug:
+    msg: |
+      ✅ MONITOREO CONFIGURADO
+      Rol: {{ role_name }}
+      Directorio: {{ monitoring_base_dir }}
+      Métricas: {{ monitoring_metrics_dir }}
+      Alertas: {{ monitoring_alerts_dir }}
+      Dashboards: {{ monitoring_dashboards_dir }}

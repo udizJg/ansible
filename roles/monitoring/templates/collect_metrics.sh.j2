@@ -1,0 +1,30 @@
+#!/bin/bash
+# ===========================================
+# SCRIPT DE RECOLECCIÓN DE MÉTRICAS
+# ===========================================
+# Generado automáticamente por Ansible
+# Rol: {{ role_name }}
+# Host: {{ ansible_hostname }}
+
+METRICS_DIR="{{ monitoring_metrics_dir }}"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+echo "Recolectando métricas del sistema..."
+
+# Métricas de CPU
+echo "=== MÉTRICAS DE CPU ===" > "$METRICS_DIR/cpu_$TIMESTAMP.txt"
+top -l 1 | head -10 >> "$METRICS_DIR/cpu_$TIMESTAMP.txt"
+
+# Métricas de memoria
+echo "=== MÉTRICAS DE MEMORIA ===" > "$METRICS_DIR/memory_$TIMESTAMP.txt"
+vm_stat >> "$METRICS_DIR/memory_$TIMESTAMP.txt"
+
+# Métricas de disco
+echo "=== MÉTRICAS DE DISCO ===" > "$METRICS_DIR/disk_$TIMESTAMP.txt"
+df -h >> "$METRICS_DIR/disk_$TIMESTAMP.txt"
+
+# Métricas de red
+echo "=== MÉTRICAS DE RED ===" > "$METRICS_DIR/network_$TIMESTAMP.txt"
+netstat -i >> "$METRICS_DIR/network_$TIMESTAMP.txt"
+
+echo "Métricas recolectadas en: $METRICS_DIR" 

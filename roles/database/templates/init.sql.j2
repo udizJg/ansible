@@ -1,0 +1,79 @@
+-- ===========================================
+-- SCRIPT DE INICIALIZACIÓN DE BASE DE DATOS
+-- ===========================================
+-- Generado automáticamente por Ansible
+-- Rol: {{ role_name }}
+-- Host: {{ ansible_hostname }}
+
+-- Crear base de datos si no existe
+CREATE DATABASE IF NOT EXISTS {{ db_name }}
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+-- Usar la base de datos
+USE {{ db_name }};
+
+-- Crear usuario si no existe
+CREATE USER IF NOT EXISTS '{{ db_user }}'@'{{ db_host }}' IDENTIFIED BY '{{ db_password }}';
+
+-- Otorgar permisos al usuario
+GRANT ALL PRIVILEGES ON {{ db_name }}.* TO '{{ db_user }}'@'{{ db_host }}';
+
+-- Aplicar cambios
+FLUSH PRIVILEGES;
+
+-- Crear tabla de usuarios
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    activo BOOLEAN DEFAULT TRUE
+);
+
+-- Crear tabla de productos
+CREATE TABLE IF NOT EXISTS productos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(200) NOT NULL,
+    descripcion TEXT,
+    precio DECIMAL(10,2) NOT NULL,
+    stock INT DEFAULT 0,
+    categoria VARCHAR(100),
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Crear tabla de pedidos
+CREATE TABLE IF NOT EXISTS pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    total DECIMAL(10,2) NOT NULL,
+    estado ENUM('pendiente', 'procesando', 'enviado', 'entregado', 'cancelado') DEFAULT 'pendiente',
+    fecha_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- Crear tabla de detalles de pedido
+CREATE TABLE IF NOT EXISTS detalles_pedido (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pedido_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+-- Crear índices para mejorar rendimiento
+CREATE INDEX idx_usuarios_email ON usuarios(email);
+CREATE INDEX idx_productos_categoria ON productos(categoria);
+CREATE INDEX idx_pedidos_usuario ON pedidos(usuario_id);
+CREATE INDEX idx_pedidos_estado ON pedidos(estado);
+CREATE INDEX idx_detalles_pedido ON detalles_pedido(pedido_id);
+
+-- Mostrar tablas creadas
+SHOW TABLES; 

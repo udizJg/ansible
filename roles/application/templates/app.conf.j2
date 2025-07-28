@@ -1,0 +1,23 @@
+# ===========================================
+# CONFIGURACIÓN DE LA APLICACIÓN
+# ===========================================
+# Generada automáticamente por Ansible
+# Rol: {{ role_name }}
+# Host: {{ ansible_hostname }}
+
+[app]
+name = {{ app_name }}
+port = {{ app_port }}
+debug = {{ app_debug }}
+secret_key = {{ app_secret_key }}
+
+[database]
+host = {{ app_db_host }}
+port = {{ app_db_port }}
+name = {{ app_db_name }}
+user = {{ app_db_user }}
+password = {{ app_db_password }}
+
+[logging]
+level = INFO
+file = {{ app_logs_dir }}/app.log 
