@@ -1,0 +1,245 @@
+---
+# ===========================================
+# PLAYBOOK: VARIABLES Y FACTS EN ANSIBLE
+# ===========================================
+# Este playbook demuestra cómo usar variables y facts
+# Perfecto para aprender a crear playbooks dinámicos
+
+- name: Aprender Variables y Facts en Ansible
+  hosts: local
+  gather_facts: yes
+
+  # ===========================================
+  # VARIABLES A NIVEL DE PLAYBOOK
+  # ===========================================
+  vars:
+    # Variables simples
+    nombre_proyecto: 'Mi Proyecto Ansible'
+    version: '2.0'
+    directorio_base: '/tmp/ansible-vars-demo'
+
+    # Variables con listas
+    servicios:
+      - nginx
+      - mysql
+      - redis
+
+    # Variables con diccionarios
+    configuracion:
+      puerto_web: 8080
+      puerto_db: 3306
+      entorno: 'desarrollo'
+      debug: true
+
+    # Variables con expresiones
+    fecha_actual: '{{ ansible_date_time.iso8601 }}'
+    usuario_sistema: '{{ ansible_user_id }}'
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Mostrar variables definidas
+    # ===========================================
+    - name: Mostrar variables del playbook
+      debug:
+        msg: |
+          === VARIABLES DEL PLAYBOOK ===
+          Nombre del proyecto: {{ nombre_proyecto }}
+          Versión: {{ version }}
+          Directorio base: {{ directorio_base }}
+          Fecha actual: {{ fecha_actual }}
+          Usuario del sistema: {{ usuario_sistema }}
+
+    # ===========================================
+    # TAREA 2: Mostrar variables de lista
+    # ===========================================
+    - name: Mostrar lista de servicios
+      debug:
+        msg: |
+          === LISTA DE SERVICIOS ===
+          {% for servicio in servicios %}
+          - {{ servicio }}
+          {% endfor %}
+          Total de servicios: {{ servicios | length }}
+
+    # ===========================================
+    # TAREA 3: Mostrar variables de diccionario
+    # ===========================================
+    - name: Mostrar configuración
+      debug:
+        msg: |
+          === CONFIGURACIÓN ===
+          Puerto web: {{ configuracion.puerto_web }}
+          Puerto base de datos: {{ configuracion.puerto_db }}
+          Entorno: {{ configuracion.entorno }}
+          Modo debug: {{ configuracion.debug }}
+
+    # ===========================================
+    # TAREA 4: Crear directorio usando variables
+    # ===========================================
+    - name: Crear directorio base usando variable
+      file:
+        path: '{{ directorio_base }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ usuario_sistema }}'
+        group: '{{ ansible_user_gid }}'
+      register: dir_creado
+
+    - name: Mostrar directorio creado
+      debug:
+        msg: 'Directorio creado: {{ dir_creado.path }}'
+
+    # ===========================================
+    # TAREA 5: Variables locales en tareas
+    # ===========================================
+    - name: Crear archivo de configuración con variables locales
+      copy:
+        content: |
+          # Configuración generada por Ansible
+          # Proyecto: {{ nombre_proyecto }}
+          # Versión: {{ version }}
+          # Fecha: {{ fecha_actual }}
+          # Usuario: {{ usuario_sistema }}
+
+          [proyecto]
+          nombre = "{{ nombre_proyecto }}"
+          version = "{{ version }}"
+          directorio = "{{ directorio_base }}"
+
+          [servicios]
+          {% for servicio in servicios %}
+          {{ servicio }} = true
+          {% endfor %}
+
+          [configuracion]
+          puerto_web = {{ configuracion.puerto_web }}
+          puerto_db = {{ configuracion.puerto_db }}
+          entorno = "{{ configuracion.entorno }}"
+          debug = {{ configuracion.debug | lower }}
+        dest: '{{ directorio_base }}/config.ini'
+        mode: '0644'
+        owner: '{{ usuario_sistema }}'
+        group: '{{ ansible_user_gid }}'
+      register: archivo_config
+
+    - name: Mostrar archivo de configuración creado
+      debug:
+        msg: 'Archivo de configuración creado: {{ archivo_config.dest }}'
+
+    # ===========================================
+    # TAREA 6: Variables con set_fact
+    # ===========================================
+    - name: Crear variable dinámica con set_fact
+      set_fact:
+        timestamp: '{{ ansible_date_time.epoch }}'
+        ruta_completa: '/tmp/ansible-vars-demo/logs'
+        nombre_archivo_log: 'app-{{ ansible_date_time.epoch }}.log'
+
+    - name: Mostrar variables creadas con set_fact
+      debug:
+        msg: |
+          === VARIABLES DINÁMICAS ===
+          Timestamp: {{ timestamp }}
+          Ruta completa: {{ ruta_completa }}
+          Archivo de log: {{ nombre_archivo_log }}
+
+    # ===========================================
+    # TAREA 7: Crear directorio de logs usando variables dinámicas
+    # ===========================================
+    - name: Crear directorio de logs
+      file:
+        path: '{{ ruta_completa }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ usuario_sistema }}'
+        group: '{{ ansible_user_gid }}'
+
+    # ===========================================
+    # TAREA 8: Variables con register
+    # ===========================================
+    - name: Obtener información del sistema
+      command: uname -a
+      register: info_sistema
+
+    - name: Obtener espacio en disco
+      command: df -h {{ directorio_base }}
+      register: espacio_disco
+
+    - name: Mostrar información recopilada
+      debug:
+        msg: |
+          === INFORMACIÓN DEL SISTEMA ===
+          Sistema: {{ info_sistema.stdout }}
+
+          === ESPACIO EN DISCO ===
+          {{ espacio_disco.stdout }}
+
+    # ===========================================
+    # TAREA 9: Variables condicionales
+    # ===========================================
+    - name: Crear variable condicional
+      set_fact:
+        es_desarrollo: "{{ configuracion.entorno == 'desarrollo' }}"
+        es_produccion: "{{ configuracion.entorno == 'produccion' }}"
+
+    - name: Mostrar variables condicionales
+      debug:
+        msg: |
+          === VARIABLES CONDICIONALES ===
+          Es desarrollo: {{ es_desarrollo }}
+          Es producción: {{ es_produccion }}
+          Entorno actual: {{ configuracion.entorno }}
+
+    # ===========================================
+    # TAREA 10: Crear archivo de log con variables condicionales
+    # ===========================================
+    - name: Crear archivo de log
+      copy:
+        content: |
+          # Log de aplicación
+          # Entorno: {{ configuracion.entorno }}
+          # Timestamp: {{ timestamp }}
+          # Es desarrollo: {{ es_desarrollo }}
+          # Es producción: {{ es_produccion }}
+
+          {% if es_desarrollo %}
+          [DEBUG] Modo desarrollo activado
+          [DEBUG] Logging detallado habilitado
+          {% endif %}
+
+          {% if es_produccion %}
+          [INFO] Modo producción activado
+          [INFO] Logging mínimo habilitado
+          {% endif %}
+
+          [INFO] Aplicación iniciada correctamente
+          [INFO] Configuración cargada desde: {{ archivo_config.dest }}
+        dest: '{{ ruta_completa }}/{{ nombre_archivo_log }}'
+        mode: '0644'
+        owner: '{{ usuario_sistema }}'
+        group: '{{ ansible_user_gid }}'
+      register: archivo_log
+
+    - name: Mostrar archivo de log creado
+      debug:
+        msg: 'Archivo de log creado: {{ archivo_log.dest }}'
+
+    # ===========================================
+    # TAREA 11: Mostrar estructura final
+    # ===========================================
+    - name: Listar archivos creados
+      find:
+        paths: '{{ directorio_base }}'
+        recurse: yes
+      register: archivos_creados
+
+    - name: Mostrar estructura final
+      debug:
+        msg: |
+          === ESTRUCTURA FINAL ===
+          Directorio base: {{ directorio_base }}
+          Archivos creados:
+          {% for archivo in archivos_creados.files %}
+          - {{ archivo.path }} ({{ archivo.size }} bytes)
+          {% endfor %}
+          Total de archivos: {{ archivos_creados.files | length }}

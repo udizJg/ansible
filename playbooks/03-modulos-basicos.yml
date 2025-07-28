@@ -1,0 +1,202 @@
+---
+# ===========================================
+# PLAYBOOK: MÓDULOS BÁSICOS DE ANSIBLE
+# ===========================================
+# Este playbook demuestra los módulos más importantes de Ansible
+# Perfecto para aprender cómo automatizar tareas comunes
+
+- name: Aprender módulos básicos de Ansible
+  hosts: local
+  gather_facts: yes
+
+  tasks:
+    # ===========================================
+    # MÓDULO: FILE - Gestionar archivos y directorios
+    # ===========================================
+
+    # TAREA 1: Crear un directorio
+    - name: Crear directorio para nuestro proyecto
+      file:
+        path: /tmp/ansible-demo
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      register: dir_creado
+
+    - name: Mostrar resultado de crear directorio
+      debug:
+        msg: 'Directorio creado: /tmp/ansible-demo'
+
+    # TAREA 2: Crear un archivo vacío
+    - name: Crear archivo de configuración
+      file:
+        path: /tmp/ansible-demo/config.txt
+        state: touch
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      register: archivo_creado
+
+    - name: Mostrar archivo creado
+      debug:
+        msg: 'Archivo creado: /tmp/ansible-demo/config.txt'
+
+    # ===========================================
+    # MÓDULO: COPY - Copiar archivos
+    # ===========================================
+
+    # TAREA 3: Copiar contenido a un archivo
+    - name: Copiar contenido al archivo de configuración
+      copy:
+        content: |
+          # Configuración de Ansible Demo
+          # Creado el: {{ ansible_date_time.iso8601 }}
+          # Host: {{ ansible_hostname }}
+          # Usuario: {{ ansible_user_id }}
+
+          [configuracion]
+          nombre = "Proyecto Demo"
+          version = "1.0"
+          activo = true
+        dest: /tmp/ansible-demo/config.txt
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      register: contenido_copiado
+
+    - name: Mostrar que se copió el contenido
+      debug:
+        msg: 'Contenido copiado a: {{ contenido_copiado.dest }}'
+
+    # ===========================================
+    # MÓDULO: TEMPLATE - Usar plantillas Jinja2
+    # ===========================================
+
+    # TAREA 4: Crear una plantilla
+    - name: Crear archivo de plantilla
+      copy:
+        content: |
+          # Plantilla de configuración
+          # Generada automáticamente por Ansible
+
+          [sistema]
+          hostname = {{ ansible_hostname }}
+          sistema_operativo = {{ ansible_system }}
+          arquitectura = {{ ansible_architecture }}
+          usuario_actual = {{ ansible_user_id }}
+          fecha_generacion = {{ ansible_date_time.iso8601 }}
+
+          [red]
+          ip_local = {{ ansible_default_ipv4.address if ansible_default_ipv4 is defined else '127.0.0.1' }}
+          interfaz_principal = {{ ansible_default_ipv4.interface if ansible_default_ipv4 is defined else 'lo0' }}
+
+          [recursos]
+          memoria_total = {{ ansible_memtotal_mb if ansible_memtotal_mb is defined else 'N/A' }} MB
+          procesadores = {{ ansible_processor_cores if ansible_processor_cores is defined else 'N/A' }}
+        dest: /tmp/ansible-demo/plantilla.conf
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      register: plantilla_creada
+
+    - name: Mostrar plantilla creada
+      debug:
+        msg: 'Plantilla creada: {{ plantilla_creada.dest }}'
+
+    # ===========================================
+    # MÓDULO: LINEINFILE - Modificar archivos línea por línea
+    # ===========================================
+
+    # TAREA 5: Agregar una línea al archivo de configuración
+    - name: Agregar línea de comentario al archivo
+      lineinfile:
+        path: /tmp/ansible-demo/config.txt
+        line: '# Archivo modificado por Ansible el {{ ansible_date_time.iso8601 }}'
+        insertafter: '^#'
+        state: present
+      register: linea_agregada
+
+    - name: Mostrar si se agregó la línea
+      debug:
+        msg: "Línea agregada: {{ 'Sí' if linea_agregada.changed else 'Ya existía' }}"
+
+    # ===========================================
+    # MÓDULO: STAT - Obtener información de archivos
+    # ===========================================
+
+    # TAREA 6: Verificar información de los archivos creados
+    - name: Obtener información del directorio
+      stat:
+        path: /tmp/ansible-demo
+      register: info_directorio
+
+    - name: Mostrar información del directorio
+      debug:
+        msg: |
+          Directorio: {{ info_directorio.stat.path }}
+          Existe: {{ info_directorio.stat.exists }}
+          Es directorio: {{ info_directorio.stat.isdir }}
+          Tamaño: {{ info_directorio.stat.size }} bytes
+          Permisos: {{ info_directorio.stat.mode }}
+          Propietario: {{ info_directorio.stat.pw_name }}
+
+    - name: Obtener información del archivo de configuración
+      stat:
+        path: /tmp/ansible-demo/config.txt
+      register: info_archivo
+
+    - name: Mostrar información del archivo
+      debug:
+        msg: |
+          Archivo: {{ info_archivo.stat.path }}
+          Existe: {{ info_archivo.stat.exists }}
+          Es archivo: {{ info_archivo.stat.isreg }}
+          Tamaño: {{ info_archivo.stat.size }} bytes
+          Permisos: {{ info_archivo.stat.mode }}
+          Propietario: {{ info_archivo.stat.pw_name }}
+
+    # ===========================================
+    # MÓDULO: FIND - Buscar archivos
+    # ===========================================
+
+    # TAREA 7: Buscar archivos en nuestro directorio
+    - name: Buscar archivos en el directorio demo
+      find:
+        paths: /tmp/ansible-demo
+        file_type: file
+        recurse: yes
+      register: archivos_encontrados
+
+    - name: Mostrar archivos encontrados
+      debug:
+        msg: |
+          Archivos encontrados en /tmp/ansible-demo:
+          {% for archivo in archivos_encontrados.files %}
+          - {{ archivo.path }} ({{ archivo.size }} bytes)
+          {% endfor %}
+
+    # ===========================================
+    # MÓDULO: COMMAND/SHELL - Ejecutar comandos
+    # ===========================================
+
+    # TAREA 8: Mostrar contenido de los archivos creados
+    - name: Mostrar contenido del archivo de configuración
+      command: cat /tmp/ansible-demo/config.txt
+      register: contenido_config
+
+    - name: Mostrar contenido del archivo de configuración
+      debug:
+        msg: |
+          Contenido de config.txt:
+          {{ contenido_config.stdout_lines }}
+
+    - name: Mostrar contenido de la plantilla
+      command: cat /tmp/ansible-demo/plantilla.conf
+      register: contenido_plantilla
+
+    - name: Mostrar contenido de la plantilla
+      debug:
+        msg: |
+          Contenido de plantilla.conf:
+          {{ contenido_plantilla.stdout_lines }}

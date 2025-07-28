@@ -1,0 +1,66 @@
+---
+# ===========================================
+# PLAYBOOK: PRUEBA CON IPs LOCALES
+# ===========================================
+# Este playbook demuestra cómo usar Ansible con tu máquina local
+# Perfecto para aprender sin necesidad de servidores remotos
+
+- name: Prueba con IPs locales
+  hosts: local
+  gather_facts: yes
+
+  tasks:
+    # TAREA 1: Mostrar información básica del sistema
+    - name: Mostrar información del host
+      debug:
+        msg: |
+          Hostname: {{ ansible_hostname }}
+          Sistema Operativo: {{ ansible_system }} {{ ansible_distribution if ansible_distribution is defined else 'macOS' }}
+          Arquitectura: {{ ansible_architecture }}
+          IP Local: {{ ansible_default_ipv4.address if ansible_default_ipv4 is defined else '127.0.0.1' }}
+
+    # TAREA 2: Verificar espacio en disco
+    - name: Verificar espacio en disco
+      command: df -h
+      register: espacio_disco
+
+    - name: Mostrar espacio en disco
+      debug:
+        msg: '{{ espacio_disco.stdout_lines }}'
+
+    # TAREA 3: Verificar memoria disponible (adaptado para macOS)
+    - name: Verificar memoria del sistema
+      command: vm_stat
+      register: memoria_sistema
+
+    - name: Mostrar memoria del sistema
+      debug:
+        msg: '{{ memoria_sistema.stdout_lines }}'
+
+    # TAREA 4: Listar procesos en ejecución (adaptado para macOS)
+    - name: Contar procesos en ejecución
+      shell: ps -A | wc -l
+      register: num_procesos
+
+    - name: Mostrar número de procesos
+      debug:
+        msg: 'Procesos en ejecución: {{ num_procesos.stdout }}'
+
+    # TAREA 5: Verificar servicios comunes
+    - name: Verificar si Docker está instalado
+      command: which docker
+      register: docker_check
+      ignore_errors: yes
+
+    - name: Mostrar estado de Docker
+      debug:
+        msg: "Docker instalado: {{ 'Sí' if docker_check.rc == 0 else 'No' }}"
+
+    - name: Verificar si Python está instalado
+      command: python3 --version
+      register: python_check
+      ignore_errors: yes
+
+    - name: Mostrar versión de Python
+      debug:
+        msg: "Python: {{ python_check.stdout if python_check.rc == 0 else 'No instalado' }}"

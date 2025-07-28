@@ -1,0 +1,304 @@
+---
+# ===========================================
+# PLAYBOOK: HANDLERS EN ANSIBLE
+# ===========================================
+# Este playbook demuestra cómo usar handlers
+# Handlers ejecutan tareas solo cuando es necesario
+# Perfecto para reiniciar servicios después de cambios
+
+- name: Aprender Handlers en Ansible
+  hosts: local
+  gather_facts: yes
+
+  vars:
+    directorio_base: '/tmp/ansible-handlers-demo'
+    config_dir: '{{ directorio_base }}/config'
+    logs_dir: '{{ directorio_base }}/logs'
+    app_name: 'mi-aplicacion'
+
+    # Configuraciones de ejemplo
+    configuraciones:
+      - nombre: 'app.conf'
+        contenido: |
+          [aplicacion]
+          nombre = "{{ app_name }}"
+          puerto = 8080
+          debug = true
+          log_level = INFO
+        handler: 'reiniciar aplicacion'
+
+      - nombre: 'database.conf'
+        contenido: |
+          [database]
+          host = localhost
+          puerto = 3306
+          nombre = mydb
+          usuario = admin
+        handler: 'reiniciar base de datos'
+
+      - nombre: 'nginx.conf'
+        contenido: |
+          server {
+              listen 80;
+              server_name localhost;
+              location / {
+                  proxy_pass http://localhost:8080;
+              }
+          }
+        handler: 'reload nginx'
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Crear estructura de directorios
+    # ===========================================
+    - name: Crear directorio base
+      file:
+        path: '{{ directorio_base }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    - name: Crear directorio de configuración
+      file:
+        path: '{{ config_dir }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    - name: Crear directorio de logs
+      file:
+        path: '{{ logs_dir }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+
+    # ===========================================
+    # TAREA 2: Crear archivos de configuración
+    # ===========================================
+    - name: Crear archivos de configuración
+      copy:
+        content: '{{ item.contenido }}'
+        dest: '{{ config_dir }}/{{ item.nombre }}'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ configuraciones }}'
+      notify: '{{ item.handler }}'
+      register: archivos_config
+
+    # ===========================================
+    # TAREA 3: Crear archivo de estado
+    # ===========================================
+    - name: Crear archivo de estado de la aplicación
+      copy:
+        content: |
+          # Estado de la aplicación
+          # Última actualización: {{ ansible_date_time.iso8601 }}
+          # Configuraciones cargadas: {{ configuraciones | length }}
+          # Estado: Activo
+        dest: '{{ directorio_base }}/estado.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      notify: 'actualizar estado'
+
+    # ===========================================
+    # TAREA 4: Simular instalación de servicios
+    # ===========================================
+    - name: Crear script de la aplicación
+      copy:
+        content: |
+          #!/bin/bash
+          echo "Aplicación {{ app_name }} iniciada"
+          echo "Puerto: 8080"
+          echo "Configuración: {{ config_dir }}"
+          echo "Logs: {{ logs_dir }}"
+          echo "Estado: Activo"
+        dest: '{{ directorio_base }}/{{ app_name }}.sh'
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      notify: 'reiniciar aplicacion'
+
+    # ===========================================
+    # TAREA 5: Crear archivo de base de datos
+    # ===========================================
+    - name: Crear archivo de base de datos
+      copy:
+        content: |
+          -- Base de datos de ejemplo
+          -- Creada: {{ ansible_date_time.iso8601 }}
+
+          CREATE DATABASE IF NOT EXISTS mydb;
+          USE mydb;
+
+          CREATE TABLE IF NOT EXISTS usuarios (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              nombre VARCHAR(100),
+              email VARCHAR(100),
+              fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        dest: '{{ directorio_base }}/database.sql'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      notify: 'reiniciar base de datos'
+
+    # ===========================================
+    # TAREA 6: Crear archivo de nginx
+    # ===========================================
+    - name: Crear configuración de nginx
+      copy:
+        content: |
+          # Configuración de Nginx
+          # Aplicación: {{ app_name }}
+          # Puerto: 80 -> 8080
+
+          server {
+              listen 80;
+              server_name localhost;
+              
+              location / {
+                  proxy_pass http://localhost:8080;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+              }
+              
+              location /static {
+                  alias {{ directorio_base }}/static;
+              }
+          }
+        dest: '{{ directorio_base }}/nginx-site.conf'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      notify: 'reload nginx'
+
+    # ===========================================
+    # TAREA 7: Crear archivo de log
+    # ===========================================
+    - name: Crear archivo de log inicial
+      copy:
+        content: |
+          # Log de la aplicación {{ app_name }}
+          # Iniciado: {{ ansible_date_time.iso8601 }}
+          # Usuario: {{ ansible_user_id }}
+          # Sistema: {{ ansible_system }}
+
+          [INFO] Aplicación iniciada
+          [INFO] Configuración cargada
+          [INFO] Base de datos conectada
+          [INFO] Nginx configurado
+        dest: '{{ logs_dir }}/app.log'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      notify: 'rotar logs'
+
+    # ===========================================
+    # TAREA 8: Modificar configuración (para demostrar handlers)
+    # ===========================================
+    - name: Modificar configuración de la aplicación
+      lineinfile:
+        path: '{{ config_dir }}/app.conf'
+        line: 'puerto = 9090'
+        regexp: '^puerto ='
+      notify: 'reiniciar aplicacion'
+
+    - name: Agregar nueva configuración
+      lineinfile:
+        path: '{{ config_dir }}/app.conf'
+        line: 'timeout = 30'
+        insertafter: '^log_level'
+      notify: 'reiniciar aplicacion'
+
+    # ===========================================
+    # TAREA 9: Mostrar información de handlers
+    # ===========================================
+    - name: Mostrar archivos creados
+      find:
+        paths: '{{ directorio_base }}'
+        recurse: yes
+        file_type: file
+      register: archivos_creados
+
+    - name: Mostrar resumen de handlers
+      debug:
+        msg: |
+          === RESUMEN DE HANDLERS ===
+          Directorio base: {{ directorio_base }}
+          Archivos creados: {{ archivos_creados.files | length }}
+
+          Handlers definidos:
+          - reiniciar aplicacion
+          - reiniciar base de datos
+          - reload nginx
+          - actualizar estado
+          - rotar logs
+
+          Nota: Los handlers se ejecutan solo cuando las tareas notifican cambios
+
+  # ===========================================
+  # HANDLERS - Se ejecutan solo cuando son notificados
+  # ===========================================
+  handlers:
+    # ===========================================
+    # HANDLER 1: Reiniciar aplicación
+    # ===========================================
+    - name: reiniciar aplicacion
+      debug:
+        msg: |
+          🔄 REINICIANDO APLICACIÓN
+          Aplicación: {{ app_name }}
+          Puerto: 8080 (o 9090 si fue modificado)
+          Configuración: {{ config_dir }}
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    # ===========================================
+    # HANDLER 2: Reiniciar base de datos
+    # ===========================================
+    - name: reiniciar base de datos
+      debug:
+        msg: |
+          🗄️ REINICIANDO BASE DE DATOS
+          Base de datos: mydb
+          Puerto: 3306
+          Archivo: {{ directorio_base }}/database.sql
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    # ===========================================
+    # HANDLER 3: Reload nginx
+    # ===========================================
+    - name: reload nginx
+      debug:
+        msg: |
+          🌐 RECARGANDO NGINX
+          Configuración: {{ directorio_base }}/nginx-site.conf
+          Puerto: 80 -> 8080
+          Tiempo: {{ ansible_date_time.iso8601 }}
+
+    # ===========================================
+    # HANDLER 4: Actualizar estado
+    # ===========================================
+    - name: actualizar estado
+      debug:
+        msg: |
+          📊 ACTUALIZANDO ESTADO
+          Archivo: {{ directorio_base }}/estado.txt
+          Última actualización: {{ ansible_date_time.iso8601 }}
+          Estado: Activo
+
+    # ===========================================
+    # HANDLER 5: Rotar logs
+    # ===========================================
+    - name: rotar logs
+      debug:
+        msg: |
+          📝 ROTANDO LOGS
+          Directorio: {{ logs_dir }}
+          Archivo: app.log
+          Tiempo: {{ ansible_date_time.iso8601 }}
+          Acción: Comprimir y crear nuevo log

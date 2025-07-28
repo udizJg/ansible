@@ -1,0 +1,63 @@
+# ===========================================
+# GITIGNORE PARA PROYECTO ANSIBLE
+# ===========================================
+
+# Archivos temporales de Ansible
+/tmp/ansible-*
+*.tmp
+*.swp
+*.swo
+
+# Archivos de configuración local
+*.local
+local_*
+
+# Archivos de log
+*.log
+logs/
+
+# Archivos de backup
+*.bak
+*.backup
+*.old
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Archivos de Ansible específicos
+*.retry
+.ansible/
+ansible.log
+
+# Archivos de configuración sensible
+*.key
+*.pem
+*.p12
+*.pfx
+vault.yml
+secrets.yml
+
+# Archivos de demostración temporal
+demo-*
+test-*
+temp-*
+
+# Archivos de estado de Ansible
+.ansible_galaxy/
+.ansible_roles/ 

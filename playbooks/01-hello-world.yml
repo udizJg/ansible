@@ -1,0 +1,52 @@
+---
+# ===========================================
+# PLAYBOOK: MI PRIMER PLAYBOOK DE ANSIBLE
+# ===========================================
+# Un playbook es un archivo YAML que define qué tareas ejecutar
+# en qué servidores y en qué orden
+
+# Definición del primer "play" (conjunto de tareas)
+- name: Mi primer playbook de Ansible
+  # Especifica en qué hosts ejecutar este play
+  # 'local' es el grupo que definimos en inventory.ini
+  hosts: local
+
+  # Recopila información automática del sistema (hostname, OS, etc.)
+  # Esta información estará disponible como variables
+  gather_facts: yes
+
+  # Lista de tareas que se ejecutarán en orden
+  tasks:
+    # TAREA 1: Mostrar un mensaje simple
+    - name: Mostrar un mensaje de bienvenida
+      # Módulo 'debug' - usado para mostrar información durante la ejecución
+      debug:
+        # 'msg' es el mensaje que se mostrará
+        msg: '¡Hola! Este es mi primer playbook de Ansible'
+
+    # TAREA 2: Mostrar información del sistema
+    - name: Mostrar información del sistema
+      debug:
+        # Usa variables automáticas de Ansible que funcionan en macOS
+        # {{ ansible_hostname }} - nombre del host
+        # {{ ansible_system }} - sistema operativo
+        # {{ ansible_architecture }} - arquitectura del sistema
+        msg: |
+          Hostname: {{ ansible_hostname }}
+          Sistema: {{ ansible_system }}
+          Arquitectura: {{ ansible_architecture }}
+          Distribución: {{ ansible_distribution if ansible_distribution is defined else 'macOS' }}
+
+    # TAREA 3: Ejecutar un comando del sistema
+    - name: Verificar que podemos ejecutar comandos
+      # Módulo 'command' - ejecuta comandos del sistema
+      command: whoami
+      # 'register' guarda la salida del comando en una variable
+      register: usuario_actual
+
+    # TAREA 4: Mostrar el resultado del comando anterior
+    - name: Mostrar el usuario actual
+      debug:
+        # Accede a la salida del comando anterior
+        # .stdout contiene la salida estándar del comando
+        msg: 'Usuario actual: {{ usuario_actual.stdout }}'

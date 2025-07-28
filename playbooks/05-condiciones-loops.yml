@@ -1,0 +1,335 @@
+---
+# ===========================================
+# PLAYBOOK: CONDICIONES Y LOOPS EN ANSIBLE
+# ===========================================
+# Este playbook demuestra cómo usar condiciones y loops
+# Perfecto para crear playbooks inteligentes y eficientes
+
+- name: Aprender Condiciones y Loops en Ansible
+  hosts: local
+  gather_facts: yes
+
+  vars:
+    # Variables para demostrar condiciones
+    entorno: 'desarrollo'
+    sistema_operativo: '{{ ansible_system }}'
+    arquitectura: '{{ ansible_architecture }}'
+
+    # Variables para demostrar loops
+    usuarios:
+      - nombre: 'admin'
+        email: 'admin@example.com'
+        rol: 'administrador'
+        activo: true
+      - nombre: 'usuario1'
+        email: 'user1@example.com'
+        rol: 'usuario'
+        activo: true
+      - nombre: 'usuario2'
+        email: 'user2@example.com'
+        rol: 'usuario'
+        activo: false
+
+    servicios:
+      - nginx
+      - mysql
+      - redis
+      - postgresql
+
+    archivos_config:
+      - nombre: 'nginx.conf'
+        contenido: 'server { listen 80; }'
+        puerto: 80
+      - nombre: 'mysql.conf'
+        contenido: 'port = 3306'
+        puerto: 3306
+      - nombre: 'redis.conf'
+        contenido: 'port 6379'
+        puerto: 6379
+
+    directorio_base: '/tmp/ansible-conditions-loops'
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Condiciones básicas con 'when'
+    # ===========================================
+    - name: Mostrar información del entorno
+      debug:
+        msg: 'Ejecutando en entorno: {{ entorno }}'
+
+    - name: Crear directorio solo si es desarrollo
+      file:
+        path: '{{ directorio_base }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when: entorno == "desarrollo"
+      register: dir_creado
+
+    - name: Mostrar que se creó el directorio
+      debug:
+        msg: 'Directorio creado: {{ dir_creado.path }}'
+      when: dir_creado is defined and dir_creado.changed
+
+    # ===========================================
+    # TAREA 2: Condiciones con múltiples condiciones
+    # ===========================================
+    - name: Verificar sistema operativo
+      debug:
+        msg: 'Sistema operativo detectado: {{ sistema_operativo }}'
+
+    - name: Crear archivo específico para macOS
+      copy:
+        content: |
+          # Configuración específica para macOS
+          # Sistema: {{ sistema_operativo }}
+          # Arquitectura: {{ arquitectura }}
+          # Usuario: {{ ansible_user_id }}
+        dest: '{{ directorio_base }}/macos-config.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when:
+        - sistema_operativo == "Darwin"
+        - entorno == "desarrollo"
+      register: archivo_macos
+
+    - name: Crear archivo específico para Linux
+      copy:
+        content: |
+          # Configuración específica para Linux
+          # Sistema: {{ sistema_operativo }}
+          # Arquitectura: {{ arquitectura }}
+          # Usuario: {{ ansible_user_id }}
+        dest: '{{ directorio_base }}/linux-config.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when:
+        - sistema_operativo == "Linux"
+        - entorno == "desarrollo"
+      register: archivo_linux
+
+    # ===========================================
+    # TAREA 3: Condiciones con operadores lógicos
+    # ===========================================
+    - name: Verificar arquitectura
+      debug:
+        msg: 'Arquitectura detectada: {{ arquitectura }}'
+
+    - name: Crear archivo para arquitectura ARM
+      copy:
+        content: |
+          # Configuración para arquitectura ARM
+          # Arquitectura: {{ arquitectura }}
+          # Optimizado para ARM64
+        dest: '{{ directorio_base }}/arm-config.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when: arquitectura == "arm64" or arquitectura == "aarch64"
+      register: archivo_arm
+
+    - name: Crear archivo para arquitectura x86
+      copy:
+        content: |
+          # Configuración para arquitectura x86
+          # Arquitectura: {{ arquitectura }}
+          # Optimizado para x86_64
+        dest: '{{ directorio_base }}/x86-config.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      when: arquitectura == "x86_64" or arquitectura == "amd64"
+      register: archivo_x86
+
+    # ===========================================
+    # TAREA 4: Loops básicos con 'loop'
+    # ===========================================
+    - name: Crear directorios para servicios
+      file:
+        path: '{{ directorio_base }}/{{ item }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ servicios }}'
+      register: directorios_servicios
+
+    - name: Mostrar directorios creados
+      debug:
+        msg: 'Directorio creado: {{ item.path }}'
+      loop: '{{ directorios_servicios.results }}'
+      when: item.changed
+
+    # ===========================================
+    # TAREA 5: Loops con diccionarios
+    # ===========================================
+    - name: Crear archivos de configuración para servicios
+      copy:
+        content: |
+          # Configuración para {{ item.nombre }}
+          # Puerto: {{ item.puerto }}
+          # Contenido: {{ item.contenido }}
+        dest: '{{ directorio_base }}/{{ item.nombre }}'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ archivos_config }}'
+      register: archivos_config_creados
+
+    - name: Mostrar archivos de configuración creados
+      debug:
+        msg: 'Archivo creado: {{ item.dest }}'
+      loop: '{{ archivos_config_creados.results }}'
+      when: item.changed
+
+    # ===========================================
+    # TAREA 6: Loops con condiciones
+    # ===========================================
+    - name: Crear usuarios activos
+      copy:
+        content: |
+          # Usuario: {{ item.nombre }}
+          # Email: {{ item.email }}
+          # Rol: {{ item.rol }}
+          # Estado: {{ 'Activo' if item.activo else 'Inactivo' }}
+        dest: '{{ directorio_base }}/usuario-{{ item.nombre }}.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ usuarios }}'
+      when: item.activo == true
+      register: usuarios_activos
+
+    - name: Mostrar usuarios activos creados
+      debug:
+        msg: 'Usuario activo creado: {{ item.dest }}'
+      loop: '{{ usuarios_activos.results }}'
+      when: item.changed
+
+    # ===========================================
+    # TAREA 7: Loops con with_items (método alternativo)
+    # ===========================================
+    - name: Crear archivos de log con with_items
+      copy:
+        content: |
+          # Log para {{ item }}
+          # Fecha: {{ ansible_date_time.iso8601 }}
+          # Sistema: {{ ansible_system }}
+        dest: '{{ directorio_base }}/{{ item }}-log.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      with_items:
+        - 'aplicacion'
+        - 'sistema'
+        - 'error'
+        - 'acceso'
+      register: archivos_log
+
+    - name: Mostrar archivos de log creados
+      debug:
+        msg: 'Archivo de log creado: {{ item.dest }}'
+      loop: '{{ archivos_log.results }}'
+      when: item.changed
+
+    # ===========================================
+    # TAREA 8: Loops con with_dict (para diccionarios)
+    # ===========================================
+    - name: Crear archivos de configuración con with_dict
+      copy:
+        content: |
+          # Configuración para {{ item.key }}
+          # Valor: {{ item.value }}
+        dest: '{{ directorio_base }}/config-{{ item.key }}.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      with_dict:
+        nginx: 'servidor web'
+        mysql: 'base de datos'
+        redis: 'cache'
+        postgresql: 'base de datos avanzada'
+      register: configs_dict
+
+    - name: Mostrar configuraciones creadas
+      debug:
+        msg: 'Configuración creada: {{ item.dest }}'
+      loop: '{{ configs_dict.results }}'
+      when: item.changed
+
+    # ===========================================
+    # TAREA 9: Loops anidados
+    # ===========================================
+    - name: Crear estructura de directorios y archivos
+      file:
+        path: '{{ directorio_base }}/{{ item[0] }}/{{ item[1] }}'
+        state: directory
+        mode: '0755'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: "{{ ['logs', 'config', 'data'] | product(['app1', 'app2']) | list }}"
+      register: estructura_anidada
+
+    - name: Mostrar estructura anidada creada
+      debug:
+        msg: 'Directorio anidado creado: {{ item.path }}'
+      loop: '{{ estructura_anidada.results }}'
+      when: item.changed
+
+    # ===========================================
+    # TAREA 10: Condiciones con loops
+    # ===========================================
+    - name: Verificar servicios instalados
+      command: which {{ item }}
+      register: servicio_check
+      loop: '{{ servicios }}'
+      ignore_errors: yes
+
+    - name: Mostrar servicios disponibles
+      debug:
+        msg: "{{ item.item }}: {{ 'Instalado' if item.rc == 0 else 'No instalado' }}"
+      loop: '{{ servicio_check.results }}'
+
+    - name: Crear archivo solo para servicios instalados
+      copy:
+        content: |
+          # Servicio {{ item.item }} está instalado
+          # Ruta: {{ item.stdout if item.rc == 0 else 'No encontrado' }}
+        dest: '{{ directorio_base }}/servicio-{{ item.item }}.txt'
+        mode: '0644'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_gid }}'
+      loop: '{{ servicio_check.results }}'
+      when: item.rc == 0
+      register: servicios_instalados
+
+    # ===========================================
+    # TAREA 11: Mostrar resumen final
+    # ===========================================
+    - name: Listar todos los archivos creados
+      find:
+        paths: '{{ directorio_base }}'
+        recurse: yes
+        file_type: file
+      register: todos_archivos
+
+    - name: Mostrar resumen final
+      debug:
+        msg: |
+          === RESUMEN FINAL ===
+          Directorio base: {{ directorio_base }}
+          Total de archivos creados: {{ todos_archivos.files | length }}
+
+          Archivos por tipo:
+          - Configuraciones: {{ archivos_config | length }}
+          - Usuarios activos: {{ usuarios | selectattr('activo', 'equalto', true) | list | length }}
+          - Servicios: {{ servicios | length }}
+          - Logs: 4
+
+          Condiciones aplicadas:
+          - Entorno: {{ entorno }}
+          - Sistema: {{ sistema_operativo }}
+          - Arquitectura: {{ arquitectura }}
