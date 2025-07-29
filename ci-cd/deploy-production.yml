@@ -1,0 +1,235 @@
+---
+# ===========================================
+# PLAYBOOK: DESPLIEGUE A PRODUCCIÓN
+# ===========================================
+# Este playbook despliega la aplicación a producción
+
+- name: Desplegar aplicación a Producción
+  hosts: localhost
+  gather_facts: yes
+
+  vars:
+    environment: 'production'
+    image_tag: "{{ image_tag | default('latest') }}"
+    namespace: 'production'
+    app_name: 'ansible-cicd'
+
+  tasks:
+    # ===========================================
+    # TAREA 1: Verificar configuración
+    # ===========================================
+    - name: Verificar configuración de producción
+      assert:
+        that:
+          - environment == "production"
+          - image_tag is defined
+          - namespace is defined
+        fail_msg: 'Configuración de producción inválida'
+        success_msg: 'Configuración de producción válida'
+
+    # ===========================================
+    # TAREA 2: Verificar acceso a Kubernetes
+    # ===========================================
+    - name: Verificar acceso a Kubernetes
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Namespace
+        name: '{{ namespace }}'
+      register: k8s_check
+      failed_when: k8s_check.resources | length == 0
+
+    # ===========================================
+    # TAREA 3: Crear namespace si no existe
+    # ===========================================
+    - name: Crear namespace production
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: '{{ namespace }}'
+            labels:
+              name: '{{ namespace }}'
+              environment: '{{ environment }}'
+              managed-by: ansible
+
+    # ===========================================
+    # TAREA 4: Aplicar ConfigMap
+    # ===========================================
+    - name: Aplicar ConfigMap para producción
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: ansible-config
+            namespace: '{{ namespace }}'
+            labels:
+              app: '{{ app_name }}'
+              environment: '{{ environment }}'
+          data:
+            ansible.cfg: |
+              [defaults]
+              inventory = /app/inventory/inventory.ini
+              roles_path = /app/roles
+              host_key_checking = False
+              retry_files_enabled = False
+              stdout_callback = yaml
+
+              [ssh_connection]
+              ssh_args = -o ControlMaster=auto -o ControlPersist=60s
+
+            inventory.ini: |
+              # Inventario para {{ environment }}
+              [local]
+              localhost ansible_connection=local
+
+              [{{ environment }}]
+              localhost ansible_connection=local
+
+              [all:vars]
+              environment={{ environment }}
+              ansible_python_interpreter=/usr/bin/python3
+
+    # ===========================================
+    # TAREA 5: Aplicar Deployment
+    # ===========================================
+    - name: Aplicar Deployment para producción
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: '{{ app_name }}'
+            namespace: '{{ namespace }}'
+            labels:
+              app: '{{ app_name }}'
+              environment: '{{ environment }}'
+              managed-by: ansible
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: '{{ app_name }}'
+                environment: '{{ environment }}'
+            template:
+              metadata:
+                labels:
+                  app: '{{ app_name }}'
+                  environment: '{{ environment }}'
+              spec:
+                containers:
+                  - name: ansible-app
+                    image: 'ansible-app:{{ image_tag }}'
+                    ports:
+                      - containerPort: 5000
+                        name: http
+                    env:
+                      - name: FLASK_ENV
+                        value: 'production'
+                      - name: ANSIBLE_DIR
+                        value: '/app'
+                      - name: PYTHONUNBUFFERED
+                        value: '1'
+                    resources:
+                      requests:
+                        memory: '512Mi'
+                        cpu: '500m'
+                      limits:
+                        memory: '1Gi'
+                        cpu: '1000m'
+                    volumeMounts:
+                      - name: ansible-config
+                        mountPath: /app/ansible.cfg
+                        subPath: ansible.cfg
+                      - name: ansible-config
+                        mountPath: /app/inventory/inventory.ini
+                        subPath: inventory.ini
+                      - name: ansible-playbooks
+                        mountPath: /app/playbooks
+                      - name: ansible-roles
+                        mountPath: /app/roles
+                    livenessProbe:
+                      httpGet:
+                        path: /health
+                        port: 5000
+                      initialDelaySeconds: 30
+                      periodSeconds: 10
+                    readinessProbe:
+                      httpGet:
+                        path: /health
+                        port: 5000
+                      initialDelaySeconds: 5
+                      periodSeconds: 5
+                volumes:
+                  - name: ansible-config
+                    configMap:
+                      name: ansible-config
+                  - name: ansible-playbooks
+                    emptyDir: {}
+                  - name: ansible-roles
+                    emptyDir: {}
+
+    # ===========================================
+    # TAREA 6: Aplicar Service
+    # ===========================================
+    - name: Aplicar Service para producción
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: '{{ app_name }}-service'
+            namespace: '{{ namespace }}'
+            labels:
+              app: '{{ app_name }}'
+              environment: '{{ environment }}'
+          spec:
+            type: LoadBalancer
+            ports:
+              - port: 80
+                targetPort: 5000
+                protocol: TCP
+                name: http
+              - port: 443
+                targetPort: 5000
+                protocol: TCP
+                name: https
+            selector:
+              app: '{{ app_name }}'
+              environment: '{{ environment }}'
+
+    # ===========================================
+    # TAREA 7: Verificar despliegue
+    # ===========================================
+    - name: Verificar pods en producción
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: '{{ namespace }}'
+        label_selectors:
+          - app = "{{ app_name }}"
+          - environment = "{{ environment }}"
+      register: pods_info
+
+    - name: Mostrar estado de pods
+      debug:
+        msg: |
+          🚀 DESPLIEGUE A PRODUCCIÓN COMPLETADO
+          ===========================================
+
+          ✅ Namespace: {{ namespace }}
+          ✅ Imagen: ansible-app:{{ image_tag }}
+          ✅ Replicas: 3
+          ✅ Pods desplegados: {{ pods_info.resources | length }}
+
+          Estado de pods:
+          {% for pod in pods_info.resources %}
+          - {{ pod.metadata.name }}: {{ pod.status.phase }}
+          {% endfor %}
+
+          🕐 Tiempo: {{ ansible_date_time.iso8601 }}

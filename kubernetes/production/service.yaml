@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ansible-cicd-service
+  namespace: production
+  labels:
+    app: ansible-cicd
+    environment: production
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 5000
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: 5000
+      protocol: TCP
+      name: https
+  selector:
+    app: ansible-cicd
+    environment: production

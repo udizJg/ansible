@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ansible-cicd
+  namespace: staging
+  labels:
+    app: ansible-cicd
+    environment: staging
+    managed-by: ansible
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ansible-cicd
+      environment: staging
+  template:
+    metadata:
+      labels:
+        app: ansible-cicd
+        environment: staging
+    spec:
+      containers:
+        - name: ansible-app
+          image: ansible-app:latest
+          ports:
+            - containerPort: 5000
+              name: http
+          env:
+            - name: FLASK_ENV
+              value: 'production'
+            - name: ANSIBLE_DIR
+              value: '/app'
+            - name: PYTHONUNBUFFERED
+              value: '1'
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+          volumeMounts:
+            - name: ansible-config
+              mountPath: /app/ansible.cfg
+              subPath: ansible.cfg
+            - name: ansible-config
+              mountPath: /app/inventory/inventory.ini
+              subPath: inventory.ini
+            - name: ansible-playbooks
+              mountPath: /app/playbooks
+            - name: ansible-roles
+              mountPath: /app/roles
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: ansible-config
+          configMap:
+            name: ansible-config
+        - name: ansible-playbooks
+          emptyDir: {}
+        - name: ansible-roles
+          emptyDir: {}

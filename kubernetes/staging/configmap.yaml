@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ansible-config
+  namespace: staging
+  labels:
+    app: ansible-cicd
+    environment: staging
+data:
+  ansible.cfg: |
+    [defaults]
+    inventory = /app/inventory/inventory.ini
+    roles_path = /app/roles
+    host_key_checking = False
+    retry_files_enabled = False
+    stdout_callback = yaml
+
+    [ssh_connection]
+    ssh_args = -o ControlMaster=auto -o ControlPersist=60s
+
+  inventory.ini: |
+    # Inventario para staging
+    [local]
+    localhost ansible_connection=local
+
+    [staging]
+    localhost ansible_connection=local
+
+    [all:vars]
+    environment=staging
+    ansible_python_interpreter=/usr/bin/python3

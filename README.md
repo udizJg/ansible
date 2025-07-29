@@ -146,7 +146,7 @@ ansible all -m command -a "uptime"
 8. ✅ Manejar secrets y vault
 9. ✅ Testing y debugging de playbooks
 10. ✅ Handlers y condiciones avanzadas
-11. 🔄 CI/CD con Ansible
+11. ✅ CI/CD con Ansible
 
 ## Consejos de Uso
 
@@ -207,6 +207,55 @@ ansible-playbook playbooks/11-condiciones-avanzadas.yml
 - ✅ Condiciones complejas (AND, OR, NOT) y expresiones anidadas
 - ✅ Bloques de manejo de errores (block, rescue, always)
 - ✅ Validación de variables antes de ejecutar tareas críticas
+
+## 🚀 **CI/CD con Ansible**
+
+### **Comandos esenciales:**
+```bash
+# Ejecutar pipeline completo (requiere GitHub Actions)
+git push origin main
+
+# Build de imágenes Docker
+docker build -f docker/Dockerfile.base -t ansible-base .
+docker build -f docker/Dockerfile.app -t ansible-app .
+
+# Desplegar a staging
+ansible-playbook ci-cd/deploy-staging.yml -e "image_tag=latest"
+
+# Desplegar a producción
+ansible-playbook ci-cd/deploy-production.yml -e "image_tag=latest"
+
+# Ejecutar health checks
+python monitoring/health_check.py
+
+# Configurar alertas
+python monitoring/setup_alerts.py
+
+# Generar reporte
+python monitoring/generate_report.py
+```
+
+### **Archivos de ejemplo:**
+- `.github/workflows/ansible-ci-cd.yml` - Pipeline completo de GitHub Actions
+- `docker/Dockerfile.base` - Imagen base con Ansible
+- `docker/Dockerfile.app` - Imagen de aplicación
+- `kubernetes/staging/` - Configuración de Kubernetes para staging
+- `kubernetes/production/` - Configuración de Kubernetes para producción
+- `ci-cd/deploy-staging.yml` - Playbook de despliegue a staging
+- `ci-cd/deploy-production.yml` - Playbook de despliegue a producción
+- `monitoring/health_check.py` - Script de health checks
+- `monitoring/setup_alerts.py` - Configuración de alertas
+- `monitoring/generate_report.py` - Generación de reportes
+- `docs/ci-cd.md` - Guía completa de CI/CD
+
+### **Características:**
+- ✅ Pipeline completo de CI/CD con GitHub Actions
+- ✅ Containerización con Docker y orquestación con Kubernetes
+- ✅ Despliegue automático a staging y producción
+- ✅ Monitoring y alertas con Prometheus y Slack
+- ✅ Health checks automáticos y reportes detallados
+- ✅ Rollback automático en caso de errores
+- ✅ Aplicación web con dashboard para gestión
 
 ## 🔐 **Ansible Vault - Seguridad**
 

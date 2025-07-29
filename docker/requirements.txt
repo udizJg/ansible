@@ -1,0 +1,37 @@
+# ===========================================
+# REQUIREMENTS PARA APLICACIÓN ANSIBLE
+# ===========================================
+
+# Framework web
+Flask==3.0.0
+Flask-CORS==4.0.0
+Flask-RESTful==0.3.10
+
+# Ansible y automatización
+ansible==8.5.0
+ansible-lint==6.22.1
+yamllint==1.33.0
+
+# Cloud providers
+boto3==1.34.0
+azure-mgmt-compute==30.3.0
+google-cloud-storage==2.10.0
+
+# Kubernetes
+kubernetes==28.1.0
+openshift==0.13.1
+
+# Monitoring y logging
+prometheus-client==0.19.0
+requests==2.31.0
+structlog==23.2.0
+
+# Utilidades
+jinja2==3.1.2
+pyyaml==6.0.1
+python-dotenv==1.0.0
+click==8.1.7
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0 
